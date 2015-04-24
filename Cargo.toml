@@ -1,0 +1,8 @@
+[package]
+
+name = "surface-rs"
+version = "0.0.1"
+authors = ["Stacey Ell <stacey.ell@gmail.com>"]
+
+[dependencies]
+num = "0.1.24"
