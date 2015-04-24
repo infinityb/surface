@@ -2,18 +2,18 @@ use std::cmp::min;
 use std::iter::repeat;
 use std::ops::{Index, IndexMut};
 
-use super::colorrgba::ColorRGBA;
+use super::colorrgba::{ColorRGBA, Channel};
 use super::surfacefactory::SurfaceFactory;
 
 
 #[derive(Clone)]
-pub struct Surface {
+pub struct Surface<T=u8> where T: Channel {
     pub width: usize,
     pub height: usize,
     pub x_off: usize,
     pub y_off: usize,
-    pub background: ColorRGBA<u8>,
-    pub buffer: Vec<ColorRGBA<u8>>,
+    pub background: ColorRGBA<T>,
+    pub buffer: Vec<ColorRGBA<T>>,
 }
 
 
@@ -102,6 +102,20 @@ impl Surface {
     }
 }
 
+
+impl Index<usize> for Surface {
+    type Output = ColorRGBA<u8>;
+
+    fn index<'a>(&'a self, index: usize) -> &'a ColorRGBA<u8> {
+        &self.buffer[index]
+    }
+}
+
+impl IndexMut<usize> for Surface {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut ColorRGBA<u8> {
+        &mut self.buffer[index]
+    }
+}
 
 impl Index<(usize, usize)> for Surface {
     type Output = ColorRGBA<u8>;

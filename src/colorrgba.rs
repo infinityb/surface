@@ -4,6 +4,7 @@ use num::traits::{Float, ToPrimitive};
 
 
 pub trait Channel: ToPrimitive {
+    fn max_depth() -> Option<u32>;
     fn min_value() -> Self;
     fn max_value() -> Self;
     fn add(a: Self, b: Self) -> Self;
@@ -11,6 +12,9 @@ pub trait Channel: ToPrimitive {
 }
 
 impl Channel for u8 {
+    #[inline]
+    fn max_depth() -> Option<u32> { Some(255) }
+
     #[inline]
     fn min_value() -> u8 { u8::min_value() }
 
@@ -25,6 +29,9 @@ impl Channel for u8 {
 }
 
 impl Channel for f64 {
+    #[inline]
+    fn max_depth() -> Option<u32> { None }
+
     #[inline]
     fn min_value() -> f64 { 0.0 }
 
