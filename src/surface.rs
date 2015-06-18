@@ -16,6 +16,69 @@ pub struct Surface<T=u8> where T: Channel {
     pub buffer: Vec<ColorRGBA<T>>,
 }
 
+mod zigzag {
+    pub fn to_idx(orig_size: (usize, usize), box_size: (usize, usize), coord: (usize, usize)) -> usize {
+        let (width, height) = orig_size;
+        let (box_width, box_height) = box_size;
+        assert!(width % box_width == 0);
+        assert!(height % box_height == 0);
+        let box_length = box_width * box_height;
+        let boxes_across = width / box_width;
+        let boxes_high = height / box_height;
+
+        let (x, y) = coord;
+
+        let (box_x, inner_x) = (x / box_width, x % box_width);
+        let (box_y, inner_y) = (y / box_height, y % box_height);
+
+        let mut idx = 0;
+        idx += box_y * boxes_across + box_x;
+        idx *= box_length;
+        idx += inner_y * box_width + inner_x;
+        idx
+    }
+
+    pub fn to_coord(orig_size: (usize, usize), box_size: (usize, usize), idx: usize) -> (usize, usize) {
+        let (width, height) = orig_size;
+        let (box_width, box_height) = box_size;
+        assert!(width % box_width == 0);
+        assert!(height % box_height == 0);
+        let box_length = box_width * box_height;
+        let boxes_across = width / box_width;
+        let boxes_high = height / box_height;
+
+        let (box_idx, inner_idx) = (idx / box_length, idx % box_length);
+        let (box_x, box_y) = (box_idx % boxes_across, box_idx / boxes_across);
+        let (inner_x, inner_y) = (inner_idx % box_width, inner_idx / box_width);
+        (box_x * box_width + inner_x, box_y * box_height + inner_y)
+    }
+}
+
+mod xy {
+    pub fn to_idx(orig_size: (usize, usize), coord: (usize, usize)) -> usize {
+        let (width, height) = orig_size;
+        let (x, y) = coord;
+        if width <= x {
+            panic!("`x` out of bounds (0 <= {} < {}", x, width);
+        }
+        if height <= y {
+            panic!("`y` out of bounds (0 <= {} < {}", y, height);
+        }
+        width * y + x
+    }
+
+    pub fn to_coord(orig_size: (usize, usize), idx: usize) -> (usize, usize) {
+        let (width, height) = orig_size;
+        let (x, y) = (idx % width, idx / width);
+        if width <= x {
+            panic!("`x` out of bounds (0 <= {} < {}", x, width);
+        }
+        if height <= y {
+            panic!("`y` out of bounds (0 <= {} < {}", y, height);
+        }
+        (x, y)
+    }
+}
 
 #[allow(dead_code)]
 impl Surface {
@@ -92,13 +155,28 @@ impl Surface {
 
     #[inline]
     fn get_idx(&self, x: usize, y: usize) -> usize {
-        if self.width <= x {
-            panic!("`x` out of bounds (0 <= {} < {}", x, self.width);
+        xy::to_idx((self.width, self.height), (x, y))
+    }
+
+    pub fn coords(&self) -> CoordIterator {
+        CoordIterator {
+            index: 0,
+            limit: self.width * self.height,
+            width: self.width,
+            height: self.height,
         }
-        if self.height <= y {
-            panic!("`y` out of bounds (0 <= {} < {}", y, self.height);
+    }
+
+    pub fn coords_zigzag(&self) -> CoordIteratorZigZag {
+        CoordIteratorZigZag {
+            index: 0,
+            limit: self.width * self.height,
+            width: self.width,
+            height: self.height,
+
+            box_width: 128,
+            box_height: 8,
         }
-        self.width * y + x
     }
 }
 
@@ -127,7 +205,6 @@ impl Index<(usize, usize)> for Surface {
     }
 }
 
-
 impl IndexMut<(usize, usize)> for Surface {
     fn index_mut<'a>(&'a mut self, index: (usize, usize)) -> &'a mut ColorRGBA<u8> {
         let (x, y) = index;
@@ -136,6 +213,56 @@ impl IndexMut<(usize, usize)> for Surface {
     }
 }
 
+#[derive(Debug)]
+pub struct CoordIterator {
+    index: usize,
+    limit: usize,
+    width: usize,
+    height: usize,
+}
+
+impl Iterator for CoordIterator {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<(usize, usize)> {
+        if self.index < self.limit {
+            let rv = Some((self.index % self.width, self.index / self.width));
+            self.index += 1;
+            rv
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CoordIteratorZigZag {
+    index: usize,
+    limit: usize,
+    width: usize,
+    height: usize,
+
+    box_width: usize,
+    box_height: usize,
+}
+
+impl Iterator for CoordIteratorZigZag {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<(usize, usize)> {
+        let orig_size = (self.width, self.height);
+        let box_size = (self.box_width, self.box_height);
+
+        if self.index < self.limit {
+            let rv = zigzag::to_coord(orig_size, box_size, self.index);
+            assert_eq!(zigzag::to_idx(orig_size, box_size, rv), self.index);
+            self.index += 1;
+            Some(rv)
+        } else {
+            None
+        }
+    }
+}
 
 pub struct SubsurfaceIterator {
     x_delta: usize,
@@ -146,7 +273,6 @@ pub struct SubsurfaceIterator {
     parent_height: usize,
     background: ColorRGBA<u8>,
 }
-
 
 impl SubsurfaceIterator {
     fn incr_tile(&mut self) {
@@ -173,7 +299,6 @@ impl SubsurfaceIterator {
     }
 }
 
-
 impl Iterator for SubsurfaceIterator {
     type Item = SurfaceFactory;
 
@@ -183,7 +308,6 @@ impl Iterator for SubsurfaceIterator {
         tile
     }
 }
-
 
 #[test]
 fn test_measurement() {

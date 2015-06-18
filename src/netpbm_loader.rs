@@ -3,7 +3,6 @@ use netpbm::{PpmPixel, PpmLoadResult, PpmLoadError, FromPpm};
 use super::colorrgba::{ColorRGBA, Channel};
 use super::surface::Surface;
 
-
 impl FromPpm for Surface<u8> {
     fn from_ppm(width: u32, height: u32, depth: u32,
                 pixels: &mut Iterator<Item=PpmLoadResult<PpmPixel>>

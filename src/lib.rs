@@ -10,4 +10,5 @@ mod colorrgba;
 mod surface;
 mod surfacefactory;
 mod surfaceiterator;
-mod netpbm_loader;
+
+pub mod netpbm_loader;
