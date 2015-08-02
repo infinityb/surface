@@ -1,12 +1,12 @@
 use netpbm::{PpmPixel, PpmLoadResult, PpmLoadError, FromPpm};
 
-use super::colorrgba::{ColorRGBA, Channel};
-use super::surface::Surface;
+use super::{ColorRGBA, Channel, Colorspace};
+use super::Surface;
 
-impl FromPpm for Surface<u8> {
+impl FromPpm for Surface {
     fn from_ppm(width: u32, height: u32, depth: u32,
                 pixels: &mut Iterator<Item=PpmLoadResult<PpmPixel>>
-               ) -> PpmLoadResult<Surface<u8>> {
+               ) -> PpmLoadResult<Surface> {
 
         // Check Channel::max_depth();
         if let Some(max_depth) = <u8 as Channel>::max_depth() {
@@ -15,7 +15,7 @@ impl FromPpm for Surface<u8> {
             }
         }
 
-        let mut surface: Surface<u8> = Surface::new(
+        let mut surface: Surface = Surface::new(
             width as usize, height as usize, ColorRGBA::black());
 
         for (idx, pixel) in pixels.enumerate() {

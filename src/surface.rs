@@ -2,18 +2,26 @@ use std::cmp::min;
 use std::iter::repeat;
 use std::ops::{Index, IndexMut};
 
-use super::colorrgba::{ColorRGBA, Channel};
-use super::surfacefactory::SurfaceFactory;
-
+use super::{SurfaceFactory, Colorspace, ColorRGBA};
 
 #[derive(Clone)]
-pub struct Surface<T=u8> where T: Channel {
+pub struct Surface<CS=ColorRGBA<u8>> {
     pub width: usize,
     pub height: usize,
     pub x_off: usize,
     pub y_off: usize,
-    pub background: ColorRGBA<T>,
-    pub buffer: Vec<ColorRGBA<T>>,
+    pub background: CS,
+    pub buffer: Vec<CS>,
+}
+
+impl<CS> Surface<CS> where CS: Colorspace {
+    pub fn iter_pixels<'a>(&'a self) -> ::std::slice::Iter<'a, CS> {
+        self.buffer.iter()
+    }
+
+    pub fn iter_pixels_mut<'a>(&'a mut self) -> ::std::slice::IterMut<'a, CS> {
+        self.buffer.iter_mut()
+    }
 }
 
 mod zigzag {
@@ -24,7 +32,6 @@ mod zigzag {
         assert!(height % box_height == 0);
         let box_length = box_width * box_height;
         let boxes_across = width / box_width;
-        let boxes_high = height / box_height;
 
         let (x, y) = coord;
 
@@ -45,7 +52,6 @@ mod zigzag {
         assert!(height % box_height == 0);
         let box_length = box_width * box_height;
         let boxes_across = width / box_width;
-        let boxes_high = height / box_height;
 
         let (box_idx, inner_idx) = (idx / box_length, idx % box_length);
         let (box_x, box_y) = (box_idx % boxes_across, box_idx / boxes_across);
@@ -80,9 +86,8 @@ mod xy {
     }
 }
 
-#[allow(dead_code)]
-impl Surface {
-    pub fn new(width: usize, height: usize, background: ColorRGBA<u8>) -> Surface {
+impl<CS> Surface<CS> where CS: Colorspace {
+    pub fn new(width: usize, height: usize, background: CS) -> Surface<CS> {
         Surface {
             width: width,
             height: height,
@@ -94,7 +99,7 @@ impl Surface {
     }
 
     pub fn with_offset(width: usize, height: usize, x_off: usize, y_off: usize,
-                       background: ColorRGBA<u8>) -> Surface {
+                       background: CS) -> Surface<CS> {
         Surface {
             width: width,
             height: height,
@@ -105,7 +110,7 @@ impl Surface {
         }
     }
 
-    pub fn divide(&self, tile_width: usize, tile_height: usize) -> SubsurfaceIterator {
+    pub fn divide(&self, tile_width: usize, tile_height: usize) -> SubsurfaceIterator<CS> {
         SubsurfaceIterator {
             parent_width: self.width,
             parent_height: self.height,
@@ -135,7 +140,7 @@ impl Surface {
         (width, height)
     }
 
-    pub fn merge(&mut self, tile: &Surface) {
+    pub fn merge(&mut self, tile: &Surface<CS>) {
         let x_len: usize = min(tile.width, self.width - tile.x_off);
         let y_len: usize = min(tile.height, self.height - tile.y_off);
 
@@ -181,32 +186,33 @@ impl Surface {
 }
 
 
-impl Index<usize> for Surface {
-    type Output = ColorRGBA<u8>;
 
-    fn index<'a>(&'a self, index: usize) -> &'a ColorRGBA<u8> {
+impl<CS> Index<usize> for Surface<CS> where CS: Colorspace {
+    type Output = CS;
+
+    fn index<'a>(&'a self, index: usize) -> &'a CS {
         &self.buffer[index]
     }
 }
 
-impl IndexMut<usize> for Surface {
-    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut ColorRGBA<u8> {
+impl<CS> IndexMut<usize> for Surface<CS> where CS: Colorspace {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut CS {
         &mut self.buffer[index]
     }
 }
 
-impl Index<(usize, usize)> for Surface {
-    type Output = ColorRGBA<u8>;
+impl<CS> Index<(usize, usize)> for Surface<CS> where CS: Colorspace {
+    type Output = CS;
 
-    fn index<'a>(&'a self, index: (usize, usize)) -> &'a ColorRGBA<u8> {
+    fn index<'a>(&'a self, index: (usize, usize)) -> &'a CS {
         let (x, y) = index;
         let idx = self.get_idx(x, y);
         &self.buffer[idx]
     }
 }
 
-impl IndexMut<(usize, usize)> for Surface {
-    fn index_mut<'a>(&'a mut self, index: (usize, usize)) -> &'a mut ColorRGBA<u8> {
+impl<CS> IndexMut<(usize, usize)> for Surface<CS> where CS: Colorspace {
+    fn index_mut<'a>(&'a mut self, index: (usize, usize)) -> &'a mut CS {
         let (x, y) = index;
         let idx = self.get_idx(x, y);
         &mut self.buffer[idx]
@@ -264,17 +270,17 @@ impl Iterator for CoordIteratorZigZag {
     }
 }
 
-pub struct SubsurfaceIterator {
+pub struct SubsurfaceIterator<CS> {
     x_delta: usize,
     x_off: usize,
     y_delta: usize,
     y_off: usize,
     parent_width: usize,
     parent_height: usize,
-    background: ColorRGBA<u8>,
+    background: CS,
 }
 
-impl SubsurfaceIterator {
+impl<CS> SubsurfaceIterator<CS> where CS: Colorspace {
     fn incr_tile(&mut self) {
         if self.x_off + self.x_delta < self.parent_width {
             self.x_off += self.x_delta;
@@ -284,14 +290,14 @@ impl SubsurfaceIterator {
         }
     }
 
-    fn current_tile(&self) -> Option<SurfaceFactory> {
+    fn current_tile(&self) -> Option<SurfaceFactory<CS>> {
         if self.x_off < self.parent_width && self.y_off < self.parent_height {
             Some(SurfaceFactory::new(
                 self.x_delta,
                 self.y_delta,
                 self.x_off,
                 self.y_off,
-                self.background
+                self.background,
             ))
         } else {
             None
@@ -299,10 +305,10 @@ impl SubsurfaceIterator {
     }
 }
 
-impl Iterator for SubsurfaceIterator {
-    type Item = SurfaceFactory;
+impl<CS> Iterator for SubsurfaceIterator<CS> where CS: Colorspace {
+    type Item = SurfaceFactory<CS>;
 
-    fn next(&mut self) -> Option<SurfaceFactory> {
+    fn next(&mut self) -> Option<SurfaceFactory<CS>> {
         let tile = self.current_tile();
         self.incr_tile();
         tile

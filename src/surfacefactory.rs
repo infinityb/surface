@@ -1,19 +1,18 @@
-use super::colorrgba::ColorRGBA;
-use super::surface::Surface;
+use super::{Colorspace, Surface};
 
 
-pub struct SurfaceFactory {
+pub struct SurfaceFactory<CS> {
     pub width: usize,
     pub height: usize,
     pub x_off: usize,
     pub y_off: usize,
-    pub background: ColorRGBA<u8>
+    pub background: CS,
 }
 
 
-impl SurfaceFactory {
+impl<CS> SurfaceFactory<CS> where CS: Colorspace {
     pub fn new(width: usize, height: usize, x_off: usize, y_off: usize,
-               background: ColorRGBA<u8>) -> SurfaceFactory {
+               background: CS) -> SurfaceFactory<CS> {
         SurfaceFactory {
             width: width,
             height: height,
@@ -24,7 +23,7 @@ impl SurfaceFactory {
     }
 
     #[allow(dead_code)]
-    pub fn create(&self) -> Surface {
+    pub fn create(&self) -> Surface<CS> {
         Surface::with_offset(self.width, self.height, self.x_off, self.y_off, self.background)
     }
 }

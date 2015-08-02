@@ -1,50 +1,6 @@
-use std::cmp::{min, max, Ord};
 use std::ops::{Add, Mul, Sub};
 use num::traits::{Float, ToPrimitive};
-
-
-pub trait Channel: ToPrimitive {
-    fn max_depth() -> Option<u32>;
-    fn min_value() -> Self;
-    fn max_value() -> Self;
-    fn add(a: Self, b: Self) -> Self;
-    fn sub(a: Self, b: Self) -> Self;
-}
-
-impl Channel for u8 {
-    #[inline]
-    fn max_depth() -> Option<u32> { Some(255) }
-
-    #[inline]
-    fn min_value() -> u8 { u8::min_value() }
-
-    #[inline]
-    fn max_value() -> u8 { u8::max_value() }
-
-    #[inline]
-    fn add(a: u8, b: u8) -> u8 { a.saturating_add(b) }
-
-    #[inline]
-    fn sub(a: u8, b: u8) -> u8 { a.saturating_sub(b) }
-}
-
-impl Channel for f64 {
-    #[inline]
-    fn max_depth() -> Option<u32> { None }
-
-    #[inline]
-    fn min_value() -> f64 { 0.0 }
-
-    #[inline]
-    fn max_value() -> f64 { 1.0 }
-
-    #[inline]
-    fn add(a: f64, b: f64) -> f64 { a + b }
-
-    #[inline]
-    fn sub(a: f64, b: f64) -> f64 { a - b }
-}
-
+use super::{Channel, Colorspace, clamp};
 
 #[derive(Debug, Copy)]
 pub struct ColorRGBA<T> {
@@ -65,13 +21,9 @@ impl<T: Clone> Clone for ColorRGBA<T> {
     }
 }
 
-fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
-    max(min(value, max_value), min_value)
-}
-
 // Maybe later?: ColorRGBA<f64>.quantize() -> ColorRGBA<usize>
 // How do we implement this more generally so that we may have ColorRGBA<f64>
-impl ColorRGBA<u8> {
+impl ColorRGBA<f64> {
     pub fn new_rgb_clamped(r: f64, g: f64, b: f64) -> ColorRGBA<u8> {
         let min_color: u8 = Channel::min_value();
         let max_color: u8 = Channel::max_value();
@@ -81,7 +33,9 @@ impl ColorRGBA<u8> {
             clamp((g * max_color as f64).round() as i32, min_color as i32, max_color as i32) as u8,
             clamp((b * max_color as f64).round() as i32, min_color as i32, max_color as i32) as u8)
     }
+}
 
+impl ColorRGBA<u8> {
     pub fn from_packed_rgba(color: u32) -> ColorRGBA<u8> {
         let r = ((color >> 24) & 0xFF) as u8;
         let g = ((color >> 16) & 0xFF) as u8;
@@ -101,22 +55,6 @@ impl<T: Channel> ColorRGBA<T> {
     #[allow(dead_code)]
     pub fn new_rgb(r: T, g: T, b: T) -> ColorRGBA<T> {
         ColorRGBA { r: r, g: g, b: b, a: Channel::max_value() }
-    }
-
-    #[allow(dead_code)]
-    pub fn black() -> ColorRGBA<T> {
-        ColorRGBA::new_rgb(
-            Channel::min_value(),
-            Channel::min_value(),
-            Channel::min_value())
-    }
-
-    #[allow(dead_code)]
-    pub fn white() -> ColorRGBA<T> {
-        ColorRGBA::new_rgb(
-            Channel::max_value(),
-            Channel::max_value(),
-            Channel::max_value())
     }
 
     pub fn channel_f64(&self) -> ColorRGBA<f64> {
@@ -180,6 +118,22 @@ impl<T: Float> Mul<T> for ColorRGBA<T> {
             b: self.b * other,
             a: self.a
         }
+    }
+}
+
+impl<T> Colorspace for ColorRGBA<T> where T: Channel+Copy {
+    fn white() -> Self {
+        ColorRGBA::new_rgb(
+            Channel::max_value(),
+            Channel::max_value(),
+            Channel::max_value())
+    }
+
+    fn black() -> Self {
+        ColorRGBA::new_rgb(
+            Channel::min_value(),
+            Channel::min_value(),
+            Channel::min_value())
     }
 }
 
