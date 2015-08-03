@@ -4,6 +4,13 @@ use std::ops::{Index, IndexMut};
 
 use super::{SurfaceFactory, Colorspace, ColorRGBA};
 
+
+pub const BOX_WIDTH_SHL: usize = 7;
+pub const BOX_WIDTH: usize = 1 << BOX_WIDTH_SHL;
+pub const BOX_HEIGHT_SHL: usize = 3;
+pub const BOX_HEIGHT: usize = 1 << BOX_HEIGHT_SHL;
+
+
 #[derive(Clone)]
 pub struct Surface<CS=ColorRGBA<u8>> {
     pub width: usize,
@@ -25,38 +32,37 @@ impl<CS> Surface<CS> where CS: Colorspace {
 }
 
 mod zigzag {
-    pub fn to_idx(orig_size: (usize, usize), box_size: (usize, usize), coord: (usize, usize)) -> usize {
+    use super::{BOX_WIDTH, BOX_HEIGHT};
+    pub fn to_idx(orig_size: (usize, usize), coord: (usize, usize)) -> usize {
         let (width, height) = orig_size;
-        let (box_width, box_height) = box_size;
-        assert!(width % box_width == 0);
-        assert!(height % box_height == 0);
-        let box_length = box_width * box_height;
-        let boxes_across = width / box_width;
+        assert!(width % BOX_WIDTH == 0);
+        assert!(height % BOX_HEIGHT == 0);
+        let box_length = BOX_WIDTH * BOX_HEIGHT;
+        let boxes_across = width / BOX_WIDTH;
 
         let (x, y) = coord;
 
-        let (box_x, inner_x) = (x / box_width, x % box_width);
-        let (box_y, inner_y) = (y / box_height, y % box_height);
+        let (box_x, inner_x) = (x / BOX_WIDTH, x % BOX_WIDTH);
+        let (box_y, inner_y) = (y / BOX_HEIGHT, y % BOX_HEIGHT);
 
         let mut idx = 0;
         idx += box_y * boxes_across + box_x;
         idx *= box_length;
-        idx += inner_y * box_width + inner_x;
+        idx += inner_y * BOX_WIDTH + inner_x;
         idx
     }
 
-    pub fn to_coord(orig_size: (usize, usize), box_size: (usize, usize), idx: usize) -> (usize, usize) {
+    pub fn to_coord(orig_size: (usize, usize), idx: usize) -> (usize, usize) {
         let (width, height) = orig_size;
-        let (box_width, box_height) = box_size;
-        assert!(width % box_width == 0);
-        assert!(height % box_height == 0);
-        let box_length = box_width * box_height;
-        let boxes_across = width / box_width;
+        assert!(width % BOX_WIDTH == 0);
+        assert!(height % BOX_HEIGHT == 0);
+        let box_length = BOX_WIDTH * BOX_HEIGHT;
+        let boxes_across = width / BOX_WIDTH;
 
         let (box_idx, inner_idx) = (idx / box_length, idx % box_length);
         let (box_x, box_y) = (box_idx % boxes_across, box_idx / boxes_across);
-        let (inner_x, inner_y) = (inner_idx % box_width, inner_idx / box_width);
-        (box_x * box_width + inner_x, box_y * box_height + inner_y)
+        let (inner_x, inner_y) = (inner_idx % BOX_WIDTH, inner_idx / BOX_WIDTH);
+        (box_x * BOX_WIDTH + inner_x, box_y * BOX_HEIGHT + inner_y)
     }
 }
 
@@ -257,11 +263,10 @@ impl Iterator for CoordIteratorZigZag {
 
     fn next(&mut self) -> Option<(usize, usize)> {
         let orig_size = (self.width, self.height);
-        let box_size = (self.box_width, self.box_height);
 
         if self.index < self.limit {
-            let rv = zigzag::to_coord(orig_size, box_size, self.index);
-            assert_eq!(zigzag::to_idx(orig_size, box_size, rv), self.index);
+            let rv = zigzag::to_coord(orig_size, self.index);
+            assert_eq!(zigzag::to_idx(orig_size, rv), self.index);
             self.index += 1;
             Some(rv)
         } else {
@@ -336,7 +341,6 @@ fn test_measurement() {
     assert_eq!(or_width * or_height, total_pixels);
 }
 
-
 #[test]
 fn test_paint_it_red() {
     let width = 800;
@@ -384,5 +388,50 @@ fn test_paint_it_red() {
         assert_eq!(color.r, 255);
         assert_eq!(color.g, 0);
         assert_eq!(color.b, 0);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{zigzag, Surface};
+    use super::super::ColorRGBA;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_zigzag_to_coord(b: &mut Bencher) {
+        use test::black_box;
+
+        const WIDTH: usize = 896;
+        const HEIGHT: usize = 600;
+        const IDX: usize = 743 * 600 + 397;
+
+        b.iter(|| {
+            let width = black_box(WIDTH);
+            let height = black_box(HEIGHT);
+            let box_width = black_box(128);
+            let box_height = black_box(8);
+            let idx = black_box(IDX);
+            zigzag::to_coord((WIDTH, HEIGHT), idx)
+        });
+    }
+
+    #[bench]
+    fn bench_zigzag_to_idx(b: &mut Bencher) {
+        use test::black_box;
+
+        const WIDTH: usize = 896;
+        const HEIGHT: usize = 600;
+        const X: usize = 743;
+        const Y: usize = 397;
+
+        b.iter(|| {
+            let width = black_box(WIDTH);
+            let height = black_box(HEIGHT);
+            let box_width = black_box(128);
+            let box_height = black_box(8);
+            let x = ::test::black_box(X);
+            let y = ::test::black_box(Y);
+            zigzag::to_idx((width, height), (x, y))
+        });
     }
 }

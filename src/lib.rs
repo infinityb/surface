@@ -1,5 +1,10 @@
+#![feature(test)]
+
 extern crate num;
 extern crate netpbm;
+
+#[cfg(test)]
+extern crate test;
 
 pub use self::colorspace::{Channel, Colorspace};
 pub use self::colorspace::{
