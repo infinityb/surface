@@ -1,6 +1,4 @@
-use std::ops::{Add, Mul, Sub};
-use num::traits::{Float, ToPrimitive};
-use super::{Channel, Colorspace, ColorRGB, clamp};
+use super::{Channel, Colorspace};
 
 #[derive(Debug, Copy)]
 pub struct ColorYUV<T> {
