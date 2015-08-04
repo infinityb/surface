@@ -23,7 +23,7 @@ fn pixel_yuv444_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
 }
 
 pub fn yuv444_to_rgb888(surf: &Surface<ColorYUV<u8>>) -> Surface<ColorRGB<u8>> {
-    let mut out = Surface::new(surf.width, surf.height, ColorRGB::black());
+    let mut out = Surface::new(surf.width(), surf.height(), ColorRGB::black());
     for (pin, pout) in surf.iter_pixels().zip(out.iter_pixels_mut()) {
         *pout = pixel_yuv444_to_rgb888(*pin);
     }
