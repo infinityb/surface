@@ -19,7 +19,7 @@ impl<T: Channel> ColorL<T> {
 
 impl<T> Colorspace for ColorL<T> where T: Channel+Copy {
     fn white() -> Self {
-        ColorL { l: Channel::min_value() }
+        ColorL { l: Channel::max_value() }
     }
 
     fn black() -> Self {
