@@ -7,7 +7,7 @@ fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
     max(min(value, max_value), min_value)
 }
 
-fn pixel_yuv444_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
+fn pixel_yuv888_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
     let (y, u, v) = (c.y as f64, c.u as f64, c.v as f64);
     let (up, vp) = (u - 128.0, v - 128.0);
 
@@ -22,10 +22,10 @@ fn pixel_yuv444_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
     }
 }
 
-pub fn yuv444_to_rgb888(surf: &Surface<ColorYUV<u8>>) -> Surface<ColorRGB<u8>> {
+pub fn yuv888_to_rgb888(surf: &Surface<ColorYUV<u8>>) -> Surface<ColorRGB<u8>> {
     let mut out = Surface::new(surf.width(), surf.height(), ColorRGB::black());
     for (pin, pout) in surf.iter_pixels().zip(out.iter_pixels_mut()) {
-        *pout = pixel_yuv444_to_rgb888(*pin);
+        *pout = pixel_yuv888_to_rgb888(*pin);
     }
     out
 }

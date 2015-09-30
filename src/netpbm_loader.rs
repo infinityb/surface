@@ -15,12 +15,14 @@ impl FromPpm for Surface {
             }
         }
 
-        let mut surface: Surface = Surface::new(
-            width as usize, height as usize, ColorRGBA::black());
+        let (width, height) = (width as usize, height as usize);
+        let mut surface: Surface = Surface::new(width, height, ColorRGBA::white());
 
         for (idx, pixel) in pixels.enumerate() {
+            let x = idx % width;
+            let y = idx / width;
             let PpmPixel(r, g, b) = try!(pixel);
-            surface[idx] = ColorRGBA::new_rgb(r as u8, g as u8, b as u8);
+            surface[(x, y)] = ColorRGBA::new_rgb(r as u8, g as u8, b as u8);
         }
 
         Ok(surface)
