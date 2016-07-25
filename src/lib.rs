@@ -1,7 +1,8 @@
-#![feature(test, scoped)]
+#![feature(reflect_marker)]
 
 extern crate num;
-extern crate netpbm;
+
+//extern crate netpbm;
 
 #[cfg(test)]
 extern crate test;
@@ -30,4 +31,6 @@ pub use self::surface::{
 mod surface;
 
 pub mod colorspace;
-pub mod netpbm_loader;
+// pub mod kernels;
+pub mod planar;
+// pub mod netpbm_loader;

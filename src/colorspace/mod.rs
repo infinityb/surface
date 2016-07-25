@@ -1,5 +1,7 @@
+use std::marker::Reflect;
 use num::traits::{Float, ToPrimitive};
 use std::cmp::{min, max, Ord};
+use std::ops::{Add, Sub, Mul, Div};
 
 mod colorl;
 mod colorla;
@@ -14,15 +16,44 @@ pub use self::colorrgb::ColorRGB;
 pub use self::colorrgba::ColorRGBA;
 pub use self::coloryuv::ColorYUV;
 
-pub trait Channel: ToPrimitive + Clone {
+pub trait Channel: ToPrimitive + Reflect + Clone + Copy +
+        Add<Output=Self> + Sub<Output=Self> +
+        Mul<Output=Self> + Div<Output=Self>
+{
+    // type DoubleWidth: Channel;
+
+    #[inline(always)]
+    fn from_i32(val: i32, min: i32, max: i32) -> Self;
+
+    #[inline(always)]
+    fn to_i32(&self, min: i32, max: i32) -> i32;
+
     fn max_depth() -> Option<u32>;
     fn min_value() -> Self;
     fn max_value() -> Self;
+
     fn add(a: Self, b: Self) -> Self;
     fn sub(a: Self, b: Self) -> Self;
 }
 
 impl Channel for u8 {
+    // type DoubleWidth = u16;
+
+    #[inline(always)]
+    fn from_i32(val: i32, min: i32, max: i32) -> Self {
+        let val_norm = (val - min) as i64;
+        let range = (max - min) as i64;
+        (256 * val_norm / range) as u8
+    }
+
+    #[inline(always)]
+    fn to_i32(&self, min: i32, max: i32) -> i32 {
+        let range = (max - min) as i64;
+        let val = *self as i64;
+
+        (val * range / 256 + min as i64) as i32
+    }
+
     #[inline]
     fn max_depth() -> Option<u32> { Some(u8::max_value() as u32) }
 
@@ -40,6 +71,16 @@ impl Channel for u8 {
 }
 
 impl Channel for u16 {
+    // type DoubleWidth = u16;
+
+    fn from_i32(val: i32, min: i32, max: i32) -> Self {
+        unimplemented!();
+    }
+
+    fn to_i32(&self, min: i32, max: i32) -> i32 {
+        unimplemented!();
+    }
+
     #[inline]
     fn max_depth() -> Option<u32> { Some(u16::max_value() as u32) }
 
@@ -57,6 +98,16 @@ impl Channel for u16 {
 }
 
 impl Channel for u32 {
+    // type DoubleWidth = u64;
+
+    fn from_i32(val: i32, min: i32, max: i32) -> Self {
+        unimplemented!();
+    }
+
+    fn to_i32(&self, min: i32, max: i32) -> i32 {
+        unimplemented!();
+    }
+
     #[inline]
     fn max_depth() -> Option<u32> { Some(u32::max_value()) }
 
@@ -74,6 +125,14 @@ impl Channel for u32 {
 }
 
 impl Channel for f64 {
+    fn from_i32(val: i32, min: i32, max: i32) -> Self {
+        unimplemented!();
+    }
+
+    fn to_i32(&self, min: i32, max: i32) -> i32 {
+        unimplemented!();
+    }
+
     #[inline]
     fn max_depth() -> Option<u32> { None }
 
@@ -90,10 +149,17 @@ impl Channel for f64 {
     fn sub(a: f64, b: f64) -> f64 { a - b }
 }
 
-pub trait Colorspace: Copy {
+pub trait Colorspace: Copy + Sized {
+    type Channel: Channel;
+
+    /// Bytes per pixel
+    // fn bpp() -> usize;
+
     fn white() -> Self;
 
     fn black() -> Self;
+
+    fn luma(&self) -> Self::Channel;
 }
 
 
