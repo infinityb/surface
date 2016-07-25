@@ -4,7 +4,8 @@ use super::super::colorspace::ColorYUV as ColorYuv;
 
 pub struct Yuv420p;
 
-pub struct Yuv420pHolder<C> {
+#[derive(Clone)]
+pub struct Yuv420pHolder<C> where C: Copy {
     pixels: usize,
     data: Box<[C]>,
 }
@@ -19,7 +20,7 @@ impl Contiguous for Yuv420pHolder<u8> {
     }
 }
 
-impl<C> PlaneHolder<C> for Yuv420pHolder<C> {
+impl<C> PlaneHolder<C> for Yuv420pHolder<C> where C: Copy {
     fn get(&self, idx: usize) -> &[C] {
         match idx {
             0 => self.get_y(),
@@ -39,7 +40,7 @@ impl<C> PlaneHolder<C> for Yuv420pHolder<C> {
     }
 }
 
-impl<C> Yuv420pHolder<C> {
+impl<C> Yuv420pHolder<C> where C: Copy {
     #[inline]
     pub fn get_y(&self) -> &[C] {
         &self.data[..self.pixels]

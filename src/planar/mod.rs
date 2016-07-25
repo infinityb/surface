@@ -20,45 +20,45 @@ pub trait Kernel3x3<S> where S: Colorspace {
     fn execute(data: &[S; 9]) -> S;
 }
 
-pub trait PlaneHolder<C> {
+pub trait PlaneHolder<C>: Clone {
     fn get(&self, idx: usize) -> &[C];
 
     fn get_mut(&mut self, idx: usize) -> &mut [C];
 }
 
-impl<C> PlaneHolder<C> for [Box<[C]>; 1] where C: Channel {
-    fn get(&self, idx: usize) -> &[C] {
-        let plane = &self[idx];
-        &plane[..]
-    }
+// impl<C> PlaneHolder<C> for [Box<[C]>; 1] where C: Channel {
+//     fn get(&self, idx: usize) -> &[C] {
+//         let plane = &self[idx];
+//         &plane[..]
+//     }
 
-    fn get_mut(&mut self, idx: usize) -> &mut [C] {
-        let plane = &mut self[idx];
-        &mut plane[..]
-    }
-}
+//     fn get_mut(&mut self, idx: usize) -> &mut [C] {
+//         let plane = &mut self[idx];
+//         &mut plane[..]
+//     }
+// }
 
-impl Contiguous for [Box<[u8]>; 1] {
-    fn raw_bytes(&self) -> &[u8] {
-        &self[0][..]
-    }
+// impl Contiguous for [Box<[u8]>; 1] {
+//     fn raw_bytes(&self) -> &[u8] {
+//         &self[0][..]
+//     }
 
-    fn raw_bytes_mut(&mut self) -> &mut [u8] {
-        &mut self[0][..]
-    }
-}
+//     fn raw_bytes_mut(&mut self) -> &mut [u8] {
+//         &mut self[0][..]
+//     }
+// }
 
-impl<C> PlaneHolder<C> for [Box<[C]>; 3] where C: Channel {
-    fn get(&self, idx: usize) -> &[C] {
-        let plane = &self[idx];
-        &plane[..]
-    }
+// impl<C> PlaneHolder<C> for [Box<[C]>; 3] where C: Channel {
+//     fn get(&self, idx: usize) -> &[C] {
+//         let plane = &self[idx];
+//         &plane[..]
+//     }
 
-    fn get_mut(&mut self, idx: usize) -> &mut [C] {
-        let plane = &mut self[idx];
-        &mut plane[..]
-    }
-}
+//     fn get_mut(&mut self, idx: usize) -> &mut [C] {
+//         let plane = &mut self[idx];
+//         &mut plane[..]
+//     }
+// }
 
 pub trait ColorMode<C> where C: Channel {
     type Pixel: Colorspace;
@@ -73,6 +73,7 @@ pub trait ColorMode<C> where C: Channel {
     fn get_pixel(holder: &Self::Holder, width: u32, height: u32, x: u32, y: u32) -> Self::Pixel;
 }
 
+#[derive(Clone)]
 pub struct PlanarSurface<M, C>
     where
         M: ColorMode<C>,
