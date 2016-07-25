@@ -172,7 +172,7 @@ impl PlanarSurface<Yuv420p, u8> {
 }
 
 impl PlanarSurface<Luma, u8> {
-    pub fn run_luma8_kernel_3x3<K>(&self, kernel: fn(pixels: &[u8; 9]) -> u8)
+    pub fn run_luma8_kernel_3x3(&self, kernel: fn(pixels: &[u8; 9]) -> u8)
         -> PlanarSurface<Luma, u8>
     {
         use std::mem::transmute_copy;
