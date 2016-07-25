@@ -2,6 +2,7 @@ use super::{Contiguous, PlaneHolder, ColorMode};
 use super::super::Channel;
 use super::super::colorspace::ColorL;
 
+#[derive(Clone)]
 pub struct Luma;
 
 #[derive(Clone)]

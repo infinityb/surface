@@ -2,6 +2,7 @@ use super::{Contiguous, PlaneHolder, ColorMode};
 use super::super::Channel;
 use super::super::colorspace::ColorYUV as ColorYuv;
 
+#[derive(Clone)]
 pub struct Yuv420p;
 
 #[derive(Clone)]
