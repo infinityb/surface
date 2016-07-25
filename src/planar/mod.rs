@@ -3,11 +3,22 @@ use std::marker::PhantomData;
 use super::colorspace::{Colorspace, ColorYUV as ColorYuv, ColorL};
 use super::Channel;
 
+mod yuv420;
+mod luma;
+
+pub use self::yuv420::{Yuv420p, Yuv420pHolder};
+pub use self::luma::{Luma};
+
+
+pub trait Contiguous {
+    fn raw_bytes(&self) -> &[u8];
+
+    fn raw_bytes_mut(&mut self) -> &mut [u8];
+}
 
 pub trait Kernel3x3<S> where S: Colorspace {
     fn execute(data: &[S; 9]) -> S;
 }
-
 
 pub trait PlaneHolder<C> {
     fn get(&self, idx: usize) -> &[C];
@@ -24,6 +35,16 @@ impl<C> PlaneHolder<C> for [Box<[C]>; 1] where C: Channel {
     fn get_mut(&mut self, idx: usize) -> &mut [C] {
         let plane = &mut self[idx];
         &mut plane[..]
+    }
+}
+
+impl Contiguous for [Box<[u8]>; 1] {
+    fn raw_bytes(&self) -> &[u8] {
+        &self[0][..]
+    }
+
+    fn raw_bytes_mut(&mut self) -> &mut [u8] {
+        &mut self[0][..]
     }
 }
 
@@ -52,183 +73,24 @@ pub trait ColorMode<C> where C: Channel {
     fn get_pixel(holder: &Self::Holder, width: u32, height: u32, x: u32, y: u32) -> Self::Pixel;
 }
 
-// // Can't represent with current internals.
-//
-// pub struct RgbInterleaved;
-//
-// pub struct RgbInterleavedHolder<C> {
-//     data: Box<[(C, C, C)]>,
-// }
-//
-//
-// pub struct RgbPlanar;
-
-pub struct Yuv420p;
-
-pub struct Yuv420pHolder<C> {
-    pixels: usize,
-    data: Box<[C]>,
-}
-
-impl<C> PlaneHolder<C> for Yuv420pHolder<C> {
-    fn get(&self, idx: usize) -> &[C] {
-        match idx {
-            0 => self.get_y(),
-            1 => self.get_u(),
-            2 => self.get_v(),
-            _ => panic!("channel out of range"),
-        }
-    }
-
-    fn get_mut(&mut self, idx: usize) -> &mut [C] {
-        match idx {
-            0 => self.get_y_mut(),
-            1 => self.get_u_mut(),
-            2 => self.get_v_mut(),
-            _ => panic!("channel out of range"),
-        }
-    }
-}
-
-impl<C> Yuv420pHolder<C> {
-    #[inline]
-    pub fn get_y(&self) -> &[C] {
-        &self.data[..self.pixels]
-    }
-
-    #[inline]
-    pub fn get_u(&self) -> &[C] {
-        &self.data[self.pixels..][..self.pixels / 4]
-    }
-
-    #[inline]
-    pub fn get_v(&self) -> &[C] {
-        &self.data[self.pixels..][self.pixels / 4..][..self.pixels / 4]
-    }
-
-    #[inline]
-    pub fn get_y_mut(&mut self) -> &mut [C] {
-        &mut self.data[..self.pixels]
-    }
-
-    #[inline]
-    pub fn get_u_mut(&mut self) -> &mut [C] {
-        &mut self.data[self.pixels..][..self.pixels / 4]
-    }
-
-    #[inline]
-    pub fn get_v_mut(&mut self) -> &mut [C] {
-        &mut self.data[self.pixels..][self.pixels / 4..][..self.pixels / 4]
-    }
-}
-
-impl<C> ColorMode<C> for Yuv420p where C: Channel {
-    type Pixel = ColorYuv<C>;
-    type Holder = Yuv420pHolder<C>;
-
-    fn create_planes(width: u32, height: u32, data: &[C]) -> Self::Holder {
-        let mut pixels_u = width as usize * height as usize;
-        if data.len() != 3 * pixels_u / 2 {
-            panic!("Invalid data size");
-        }
-        Yuv420pHolder {
-            pixels: pixels_u,
-            data: Into::<Vec<_>>::into(data).into_boxed_slice(),
-        }
-    }
-
-    fn create_planes_black(width: u32, height: u32) -> Self::Holder {
-        let mut pixels_u = width as usize * height as usize;
-        let mut subpixels = 3 * pixels_u / 2;
-
-        let mut pixels = vec![Channel::min_value(); subpixels].into_boxed_slice();
-        for px in pixels[pixels_u..].iter_mut() {
-            *px = Channel::from_i32(1, 0, 2);
-        }
-
-        Yuv420pHolder {
-            pixels: pixels_u,
-            data: pixels,
-        }
-    }
-
-    #[inline]
-    fn put_pixel(holder: &mut Self::Holder, width: u32, height: u32, x: u32, y: u32, pixel: Self::Pixel) {
-        let offset_y = x + width * y;
-        let offset_c = (x / 2) + width * (y / 2);
-        holder.get_y_mut()[offset_y as usize] = pixel.y;
-        holder.get_u_mut()[offset_c as usize] = pixel.u;
-        holder.get_v_mut()[offset_c as usize] = pixel.v;
-    }
-
-    #[inline]
-    fn get_pixel(holder: &Self::Holder, width: u32, height: u32, x: u32, y: u32) -> Self::Pixel {
-        let offset_y = x + width * y;
-        let offset_c = (x / 2) + width * (y / 2);
-        let y = holder.get_y()[offset_y as usize];
-        let u = holder.get_u()[offset_c as usize];
-        let v = holder.get_v()[offset_c as usize];
-        ColorYuv::new_yuv(y, u, v)
-    }
-}
-
-pub struct Luma;
-
-impl<C> ColorMode<C> for Luma where C: Channel {
-    type Pixel = ColorL<C>;
-    type Holder = [Box<[C]>; 1];
-
-    fn create_planes(width: u32, height: u32, data: &[C]) -> Self::Holder {
-        let mut pixels = width as usize * height as usize;
-        if data.len() != pixels {
-            panic!("Invalid data size");
-        }
-
-        [Into::<Vec<_>>::into(data).into_boxed_slice()]
-    }
-
-    fn create_planes_black(width: u32, height: u32) -> Self::Holder {
-        let length = width as usize * height as usize;
-
-        [vec![Channel::min_value(); length].into_boxed_slice()]
-    }
-
-    fn put_pixel(holder: &mut Self::Holder, width: u32, height: u32, x: u32, y: u32, pixel: Self::Pixel) {
-        let offset_y = x + width * y;
-        holder[0][offset_y as usize] = pixel.l;
-    }
-
-    fn get_pixel(holder: &Self::Holder, width: u32, height: u32, x: u32, y: u32) -> Self::Pixel {
-        let offset_y = x + width * y;
-        ColorL::new_l(holder[0][offset_y as usize])
-    }
-}
-
-pub struct PlanarSurface<H, M, C> {
+pub struct PlanarSurface<M, C>
+    where
+        M: ColorMode<C>,
+        C: Channel,
+{
     width: u32,
     height: u32,
-    planes: H,
+    planes: <M as ColorMode<C>>::Holder,
     _mode_marker: PhantomData<M>,
     _channel_marker: PhantomData<C>,
 }
 
-impl<H, M, C> PlanarSurface<H, M, C>
+impl<M, C> PlanarSurface<M, C>
     where
-        H: PlaneHolder<C>,
-        M: ColorMode<C, Holder=H>,
+        M: ColorMode<C>,
         C: Channel,
 {
-    pub fn new(width: u32, height: u32, data: &[C]) -> PlanarSurface<H, M, C> {
-        PlanarSurface {
-            width: width,
-            height: height,
-            planes: <M as ColorMode<C>>::create_planes(width, height, data),
-            _mode_marker: PhantomData,
-            _channel_marker: PhantomData,
-        }
-    }
-
-    pub fn new_black(width: u32, height: u32) -> PlanarSurface<H, M, C> {
+    pub fn new_black(width: u32, height: u32) -> PlanarSurface<M, C> {
         PlanarSurface {
             width: width,
             height: height,
@@ -236,6 +98,18 @@ impl<H, M, C> PlanarSurface<H, M, C>
             _mode_marker: PhantomData,
             _channel_marker: PhantomData,
         }
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn pixels(&self) -> Pixels<M, C> {
+        Pixels::new(self)
     }
 
     pub fn get_pixel(&self, x: u32, y: u32) -> M::Pixel {
@@ -247,7 +121,7 @@ impl<H, M, C> PlanarSurface<H, M, C>
     }
 
     pub fn run_kernel_3x3<K>(&self, kernel: &K)
-        -> PlanarSurface<H, M, C>
+        -> PlanarSurface<M, C>
         where
             K: Kernel3x3<<M as ColorMode<C>>::Pixel>
     {
@@ -265,9 +139,106 @@ impl<H, M, C> PlanarSurface<H, M, C>
     }
 }
 
-impl<C> PlanarSurface<Yuv420pHolder<C>, Yuv420p, C> where C: Channel {
-    pub fn extract_luma(&self) -> PlanarSurface<[Box<[C]>; 1], Luma, C> {
+impl<M, C, H> PlanarSurface<M, C>
+    where
+        C: Channel,
+        M: ColorMode<C, Holder=H>,
+        H: PlaneHolder<C> + Contiguous + 'static,
+{
+    pub fn new(width: u32, height: u32, data: &[C]) -> PlanarSurface<M, C> {
+        PlanarSurface {
+            width: width,
+            height: height,
+            planes: <M as ColorMode<C>>::create_planes(width, height, data),
+            _mode_marker: PhantomData,
+            _channel_marker: PhantomData,
+        }
+    }
+
+    pub fn raw_bytes(&self) -> &[u8] {
+        self.planes.raw_bytes()
+    }
+
+    pub fn raw_bytes_mut(&mut self) -> &mut [u8] {
+        self.planes.raw_bytes_mut()
+    }
+}
+
+// TODO: generalize for all channels.  All pixels are copy-safe.
+impl PlanarSurface<Yuv420p, u8> {
+    pub fn extract_luma(&self) -> PlanarSurface<Luma, u8> {
         PlanarSurface::new(self.width, self.height, self.planes.get_y())
+    }
+}
+
+impl PlanarSurface<Luma, u8> {
+    pub fn run_luma8_kernel_3x3<K>(&self, kernel: fn(pixels: &[u8; 9]) -> u8)
+        -> PlanarSurface<Luma, u8>
+    {
+        use std::mem::transmute_copy;
+
+        let mut out = PlanarSurface::new_black(self.width, self.height);
+
+        let mut data_pix: [<Luma as ColorMode<u8>>::Pixel; 9] = [Colorspace::black(); 9];
+        let mut data: [u8; 9] = [0; 9];
+        for y in 0..self.height {
+            for x in 0..self.width {
+                surf_3x3_get(self, &mut data_pix, x, y);
+                data = unsafe { transmute_copy(&data_pix) };
+                out.put_pixel(x, y, ColorL::new_l(kernel(&data)));
+            }
+        }
+
+        out
+    }
+}
+
+// TODO: bound-check elision
+pub struct Pixels<'a, M, C>
+    where
+        M: ColorMode<C> + 'a,
+        C: Channel + 'a,
+{
+    surface: &'a PlanarSurface<M, C>,
+    x_pos: u32,
+    y_pos: u32,
+}
+
+impl<'a, M, C> Pixels<'a, M, C>
+    where
+        M: ColorMode<C>,
+        C: Channel,
+{
+    fn new(surface: &PlanarSurface<M, C>) -> Pixels<M, C> {
+        Pixels {
+            surface: surface,
+            x_pos: 0,
+            y_pos: 0,
+        }
+    }
+}
+
+impl<'a, M, C> Iterator for Pixels<'a, M, C>
+    where
+        M: ColorMode<C>,
+        C: Channel,
+{
+    type Item = M::Pixel;
+
+    fn next(&mut self) -> Option<M::Pixel> {
+        if self.surface.width <= self.x_pos && self.surface.height <= self.y_pos {
+            return None;
+        }
+    
+        let px = self.surface.get_pixel(self.x_pos, self.y_pos);
+        self.x_pos += 1;
+
+        if self.surface.width <= self.x_pos {
+            self.x_pos = 0;
+            self.y_pos += 1;
+        }
+
+        Some(px)
     }
 }
 
@@ -281,15 +252,14 @@ impl<C> PlanarSurface<Yuv420pHolder<C>, Yuv420p, C> where C: Channel {
 //// -------------
 
 #[inline]
-fn surf_3x3_get<H, M, C>(
-    inp: &PlanarSurface<H, M, C>,
+fn surf_3x3_get<M, C>(
+    inp: &PlanarSurface<M, C>,
     data: &mut [<M as ColorMode<C>>::Pixel; 9],
     x_pos: u32,
     y_pos: u32,
 )
     where
-        H: PlaneHolder<C>,
-        M: ColorMode<C, Holder=H>,
+        M: ColorMode<C>,
         C: Channel,
 {
     *data = [
