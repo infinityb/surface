@@ -6,7 +6,7 @@ use super::super::colorspace::ColorYUV as ColorYuv;
 pub struct Yuv420p;
 
 #[derive(Clone)]
-pub struct Yuv420pHolder<C> where C: Copy {
+pub struct Yuv420pHolder<C> where C: Channel {
     pixels: usize,
     data: Box<[C]>,
 }
@@ -21,7 +21,33 @@ impl Contiguous for Yuv420pHolder<u8> {
     }
 }
 
-impl<C> PlaneHolder<C> for Yuv420pHolder<C> where C: Copy {
+impl<C> PlaneHolder<C> for Yuv420pHolder<C> where C: Channel {
+    fn new(width: u32, height: u32, data: &[C]) -> Self {
+        let mut pixels_u = width as usize * height as usize;
+        if data.len() != 3 * pixels_u / 2 {
+            panic!("Invalid data size");
+        }
+        Yuv420pHolder {
+            pixels: pixels_u,
+            data: Into::<Vec<_>>::into(data).into_boxed_slice(),
+        }
+    }
+
+    fn new_black(width: u32, height: u32) -> Self {
+        let mut pixels_u = width as usize * height as usize;
+        let mut subpixels = 3 * pixels_u / 2;
+
+        let mut pixels = vec![Channel::min_value(); subpixels].into_boxed_slice();
+        for px in pixels[pixels_u..].iter_mut() {
+            *px = Channel::from_i32(1, 0, 2);
+        }
+
+        Yuv420pHolder {
+            pixels: pixels_u,
+            data: pixels,
+        }
+    }
+
     fn get(&self, idx: usize) -> &[C] {
         match idx {
             0 => self.get_y(),
@@ -41,7 +67,7 @@ impl<C> PlaneHolder<C> for Yuv420pHolder<C> where C: Copy {
     }
 }
 
-impl<C> Yuv420pHolder<C> where C: Copy {
+impl<C> Yuv420pHolder<C> where C: Channel {
     #[inline]
     pub fn get_y(&self) -> &[C] {
         &self.data[..self.pixels]
@@ -77,31 +103,6 @@ impl<C> ColorMode<C> for Yuv420p where C: Channel {
     type Pixel = ColorYuv<C>;
     type Holder = Yuv420pHolder<C>;
 
-    fn create_planes(width: u32, height: u32, data: &[C]) -> Self::Holder {
-        let mut pixels_u = width as usize * height as usize;
-        if data.len() != 3 * pixels_u / 2 {
-            panic!("Invalid data size");
-        }
-        Yuv420pHolder {
-            pixels: pixels_u,
-            data: Into::<Vec<_>>::into(data).into_boxed_slice(),
-        }
-    }
-
-    fn create_planes_black(width: u32, height: u32) -> Self::Holder {
-        let mut pixels_u = width as usize * height as usize;
-        let mut subpixels = 3 * pixels_u / 2;
-
-        let mut pixels = vec![Channel::min_value(); subpixels].into_boxed_slice();
-        for px in pixels[pixels_u..].iter_mut() {
-            *px = Channel::from_i32(1, 0, 2);
-        }
-
-        Yuv420pHolder {
-            pixels: pixels_u,
-            data: pixels,
-        }
-    }
 
     #[inline]
     fn put_pixel(holder: &mut Self::Holder, width: u32, height: u32, x: u32, y: u32, pixel: Self::Pixel) {

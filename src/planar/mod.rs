@@ -21,6 +21,10 @@ pub trait Kernel3x3<S> where S: Colorspace {
 }
 
 pub trait PlaneHolder<C>: Clone {
+    fn new(width: u32, height: u32, data: &[C]) -> Self;
+
+    fn new_black(width: u32, height: u32) -> Self;
+
     fn get(&self, idx: usize) -> &[C];
 
     fn get_mut(&mut self, idx: usize) -> &mut [C];
@@ -64,10 +68,6 @@ pub trait ColorMode<C> where C: Channel {
     type Pixel: Colorspace;
     type Holder: PlaneHolder<C>;
 
-    fn create_planes(width: u32, height: u32, data: &[C]) -> Self::Holder;
-
-    fn create_planes_black(width: u32, height: u32) -> Self::Holder;
-
     fn put_pixel(holder: &mut Self::Holder, width: u32, height: u32, x: u32, y: u32, pixel: Self::Pixel);
 
     fn get_pixel(holder: &Self::Holder, width: u32, height: u32, x: u32, y: u32) -> Self::Pixel;
@@ -95,7 +95,7 @@ impl<M, C> PlanarSurface<M, C>
         PlanarSurface {
             width: width,
             height: height,
-            planes: <M as ColorMode<C>>::create_planes_black(width, height),
+            planes: <M as ColorMode<_>>::Holder::new_black(width, height),
             _mode_marker: PhantomData,
             _channel_marker: PhantomData,
         }
@@ -140,17 +140,17 @@ impl<M, C> PlanarSurface<M, C>
     }
 }
 
-impl<M, C, H> PlanarSurface<M, C>
+impl<M, C> PlanarSurface<M, C>
     where
         C: Channel,
-        M: ColorMode<C, Holder=H>,
-        H: PlaneHolder<C> + Contiguous + 'static,
+        M: ColorMode<C>,
+        M::Holder: Contiguous + 'static,
 {
     pub fn new(width: u32, height: u32, data: &[C]) -> PlanarSurface<M, C> {
         PlanarSurface {
             width: width,
             height: height,
-            planes: <M as ColorMode<C>>::create_planes(width, height, data),
+            planes: <M as ColorMode<_>>::Holder::new(width, height, data),
             _mode_marker: PhantomData,
             _channel_marker: PhantomData,
         }

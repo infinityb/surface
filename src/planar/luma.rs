@@ -6,7 +6,7 @@ use super::super::colorspace::ColorL;
 pub struct Luma;
 
 #[derive(Clone)]
-pub struct LumaHolder<C> where C: Copy {
+pub struct LumaHolder<C> where C: Channel {
     data: Box<[C]>,
 }
 
@@ -20,7 +20,26 @@ impl Contiguous for LumaHolder<u8> {
     }
 }
 
-impl<C> PlaneHolder<C> for LumaHolder<C> where C: Copy {
+impl<C> PlaneHolder<C> for LumaHolder<C> where C: Channel {
+    fn new(width: u32, height: u32, data: &[C]) -> Self {
+        let mut pixels = width as usize * height as usize;
+        if data.len() != pixels {
+            panic!("Invalid data size");
+        }
+
+        LumaHolder {
+            data: Into::<Vec<_>>::into(data).into_boxed_slice()
+        }
+    }
+
+    fn new_black(width: u32, height: u32) -> Self {
+        let length = width as usize * height as usize;
+
+        LumaHolder {
+            data: vec![Channel::min_value(); length].into_boxed_slice(),
+        }
+    }
+
     fn get(&self, idx: usize) -> &[C] {
         match idx {
             0 => &self.data[..],
@@ -39,25 +58,6 @@ impl<C> PlaneHolder<C> for LumaHolder<C> where C: Copy {
 impl<C> ColorMode<C> for Luma where C: Channel {
     type Pixel = ColorL<C>;
     type Holder = LumaHolder<C>;
-
-    fn create_planes(width: u32, height: u32, data: &[C]) -> Self::Holder {
-        let mut pixels = width as usize * height as usize;
-        if data.len() != pixels {
-            panic!("Invalid data size");
-        }
-
-        LumaHolder {
-            data: Into::<Vec<_>>::into(data).into_boxed_slice()
-        }
-    }
-
-    fn create_planes_black(width: u32, height: u32) -> Self::Holder {
-        let length = width as usize * height as usize;
-
-        LumaHolder {
-            data: vec![Channel::min_value(); length].into_boxed_slice(),
-        }
-    }
 
     fn put_pixel(holder: &mut Self::Holder, width: u32, height: u32, x: u32, y: u32, pixel: Self::Pixel) {
         let offset_y = x + width * y;
