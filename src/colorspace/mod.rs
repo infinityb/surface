@@ -149,7 +149,7 @@ impl Channel for f64 {
     fn sub(a: f64, b: f64) -> f64 { a - b }
 }
 
-pub trait Colorspace: Copy + Sized {
+pub trait Pixel: Copy + Sized {
     type Channel: Channel;
 
     /// Bytes per pixel

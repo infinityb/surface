@@ -1,4 +1,4 @@
-use super::{Channel, Colorspace};
+use super::{Channel, Pixel};
 
 #[derive(Debug, Copy)]
 pub struct ColorL<T> {
@@ -17,7 +17,7 @@ impl<T: Channel> ColorL<T> {
     }
 }
 
-impl<T> Colorspace for ColorL<T> where T: Channel+Copy {
+impl<T> Pixel for ColorL<T> where T: Channel+Copy {
     type Channel = T;
 
     fn white() -> Self {

@@ -3,8 +3,8 @@ use std::ops::Deref;
 
 use ::Surface;
 use super::super::super::Channel;
-use super::super::{ColorYUV, ColorRGB, Colorspace};
-use super::super::super::unified::{Yuv888, Rgb, ColorMode};
+use super::super::{ColorYUV, ColorRGB, Pixel};
+use super::super::super::unified::{Yuv888, Rgb, Format};
 use ::unsafe_impl::chunks3_mut;
 
 fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {

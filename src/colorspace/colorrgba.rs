@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 use num::traits::{Float, ToPrimitive};
-use super::{Channel, Colorspace, clamp, ColorL};
+use super::{Channel, Pixel, clamp, ColorL};
 
 #[derive(Debug, Copy)]
 pub struct ColorRGBA<T> {
@@ -121,7 +121,7 @@ impl<T: Float> Mul<T> for ColorRGBA<T> {
     }
 }
 
-impl<T> Colorspace for ColorRGBA<T> where T: Channel + Copy {
+impl<T> Pixel for ColorRGBA<T> where T: Channel + Copy {
     type Channel = T;
 
     fn white() -> Self {

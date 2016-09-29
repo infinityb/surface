@@ -1,11 +1,11 @@
-use super::{ColorMode};
-use super::super::Channel;
+use super::super::{Channel, Pixel};
+use super::Format;
 use super::super::colorspace::ColorL;
 
 #[derive(Clone)]
 pub struct Luma;
 
-impl<C> ColorMode<C> for Luma where C: Channel {
+impl<C> Format<C> for Luma where C: Channel {
     type Pixel = ColorL<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -15,7 +15,7 @@ impl<C> ColorMode<C> for Luma where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
 
         let luma_min = <C as Channel>::min_value();
 
@@ -30,7 +30,7 @@ impl<C> ColorMode<C> for Luma where C: Channel {
     }
     
     #[inline]
-    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel) {
+    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel) {
         let offset_y = x + width * y;
         storage[offset_y as usize] = pixel.l;
     }

@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use super::{ColorMode};
+use super::{Format};
 use super::super::Channel;
 use super::super::colorspace::{
     ColorRGBA as ColorRgba,
@@ -23,7 +23,7 @@ fn get_offset_in_plane(width: u32, x: u32, y: u32) -> usize {
 #[derive(Clone)]
 pub struct Rgb;
 
-impl<C> ColorMode<C> for Rgb where C: Channel {
+impl<C> Format<C> for Rgb where C: Channel {
     type Pixel = ColorRgb<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -33,7 +33,7 @@ impl<C> ColorMode<C> for Rgb where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
 
         let ch_min = <C as Channel>::min_value();
         for ch in storage.iter_mut() {
@@ -50,7 +50,7 @@ impl<C> ColorMode<C> for Rgb where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel)
+    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {   
         let offset = 3 * get_offset_in_plane(x, y, width);
         let px = &mut storage[offset..];
@@ -64,7 +64,7 @@ impl<C> ColorMode<C> for Rgb where C: Channel {
 #[derive(Clone)]
 pub struct Rgba;
 
-impl<C> ColorMode<C> for Rgba where C: Channel {
+impl<C> Format<C> for Rgba where C: Channel {
     type Pixel = ColorRgba<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -74,7 +74,7 @@ impl<C> ColorMode<C> for Rgba where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
 
         let ch_min = <C as Channel>::min_value();
         for ch in storage.iter_mut() {
@@ -91,7 +91,7 @@ impl<C> ColorMode<C> for Rgba where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel)
+    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {   
         let offset = 4 * get_offset_in_plane(x, y, width);
         let px = &mut storage[offset..];
@@ -106,7 +106,7 @@ impl<C> ColorMode<C> for Rgba where C: Channel {
 #[derive(Clone)]
 pub struct RgbPlanar;
 
-impl<C> ColorMode<C> for RgbPlanar where C: Channel {
+impl<C> Format<C> for RgbPlanar where C: Channel {
     type Pixel = ColorRgb<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -116,7 +116,7 @@ impl<C> ColorMode<C> for RgbPlanar where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
 
         let ch_min = <C as Channel>::min_value();
         for ch in storage.iter_mut() {
@@ -139,7 +139,7 @@ impl<C> ColorMode<C> for RgbPlanar where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel)
+    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {
         let inplane = get_offset_in_plane(width, x, y);
         let r_off = get_plane_offset(width, height, 0) + inplane;
@@ -155,7 +155,7 @@ impl<C> ColorMode<C> for RgbPlanar where C: Channel {
 #[derive(Clone)]
 pub struct RgbaPlanar;
 
-impl<C> ColorMode<C> for RgbaPlanar where C: Channel {
+impl<C> Format<C> for RgbaPlanar where C: Channel {
     type Pixel = ColorRgba<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -165,7 +165,7 @@ impl<C> ColorMode<C> for RgbaPlanar where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
 
         let ch_min = <C as Channel>::min_value();
         for ch in storage.iter_mut() {
@@ -190,7 +190,7 @@ impl<C> ColorMode<C> for RgbaPlanar where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel)
+    fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {
         let inplane = get_offset_in_plane(width, x, y);
         let r_off = get_plane_offset(width, height, 0) + inplane;

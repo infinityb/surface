@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use super::colorspace::{
-    Colorspace,
+    Pixel,
     ColorYUV as ColorYuv,
     ColorRGBA as ColorRgba,
     ColorL,
@@ -21,16 +21,16 @@ pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
 pub trait Kernel3x3<C, S>
     where
         C: Channel,
-        S: Colorspace<Channel=C>,
+        S: Pixel<Channel=C>,
 {
     fn execute(data: &[S; 9]) -> S;
 }
 
-pub trait ColorMode<C>
+pub trait Format<C>
     where
         C: Channel
 {
-    type Pixel: Colorspace<Channel=C>;
+    type Pixel: Pixel<Channel=C>;
 
     // type PixelRef;
 
@@ -40,13 +40,13 @@ pub trait ColorMode<C>
 
     fn get_pixel(storage: &[C], width: u32, height: u32, x: u32, y: u32) -> Self::Pixel;
 
-    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel);
+    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel);
 }
 
 #[derive(Clone)]
 pub struct Surface<M, C, S>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]>,
 {
@@ -59,7 +59,7 @@ pub struct Surface<M, C, S>
 
 impl<M, C, S> Surface<M, C, S>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]>,
 {
@@ -86,7 +86,7 @@ impl<M, C, S> Surface<M, C, S>
     }
 
     pub fn get_pixel(&self, x: u32, y: u32) -> M::Pixel {
-        <M as ColorMode<C>>::get_pixel(&self.storage, self.width, self.height, x, y)
+        <M as Format<C>>::get_pixel(&self.storage, self.width, self.height, x, y)
     }
 
     pub fn to_owned(&self) -> Surface<M, C, Box<[C]>> {
@@ -99,13 +99,13 @@ impl<M, C, S> Surface<M, C, S>
 
     pub fn run_kernel_3x3<S2, K>(&self, kernel: &K, output: &mut Surface<M, C, S2>)
         where
-            K: Kernel3x3<C, <M as ColorMode<C>>::Pixel>,
+            K: Kernel3x3<C, <M as Format<C>>::Pixel>,
             S2: Deref<Target=[C]> + DerefMut,
     {
         assert_eq!(self.width, output.width);
         assert_eq!(self.height, output.height);
 
-        let mut data: [<M as ColorMode<C>>::Pixel; 9] = [Colorspace::black(); 9];
+        let mut data: [<M as Format<C>>::Pixel; 9] = [Pixel::black(); 9];
         for y in 1..(self.height - 1) {
             for x in 1..(self.width - 1) {
                 surf_3x3_get(self, &mut data, x, y);
@@ -117,18 +117,18 @@ impl<M, C, S> Surface<M, C, S>
 
 impl<M, C, S> Surface<M, C, S>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]> + DerefMut,
 {
     pub fn put_pixel(&mut self, x: u32, y: u32, val: M::Pixel) {
-        <M as ColorMode<C>>::put_pixel(&mut self.storage, self.width, self.height, x, y, val)
+        <M as Format<C>>::put_pixel(&mut self.storage, self.width, self.height, x, y, val)
     }
 }
 
 impl<M, S> Surface<M, u8, S>
     where
-        M: ColorMode<u8>,
+        M: Format<u8>,
         S: Deref<Target=[u8]>
 {
     pub fn raw_bytes(&self) -> &[u8] {
@@ -138,7 +138,7 @@ impl<M, S> Surface<M, u8, S>
 
 impl<M, S> Surface<M, u8, S>
     where
-        M: ColorMode<u8>,
+        M: Format<u8>,
         S: Deref<Target=[u8]> + DerefMut
 {
     pub fn raw_bytes_mut(&mut self) -> &mut [u8] {
@@ -148,15 +148,15 @@ impl<M, S> Surface<M, u8, S>
 
 impl<M, C> Surface<M, C, Box<[C]>>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
 {
     pub fn new_black(width: u32, height: u32) -> Surface<M, C, Box<[C]>> {
-        let length = <M as ColorMode<C>>::channel_data_size(width, height);
+        let length = <M as Format<C>>::channel_data_size(width, height);
         let min = <C as Channel>::min_value();
 
         let mut storage = vec![min; length].into_boxed_slice();
-        <M as ColorMode<C>>::init_black(width, height, &mut storage);
+        <M as Format<C>>::init_black(width, height, &mut storage);
 
         Surface {
             width: width,
@@ -172,7 +172,7 @@ impl<M, C> Surface<M, C, Box<[C]>>
 pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 -> Surface<Luma, C, Box<[C]>>
     where
-        M: ColorMode<C> + ::std::marker::Reflect + 'static,
+        M: Format<C> + ::std::marker::Reflect + 'static,
         C: Channel,
         S: Deref<Target=[C]>,
 {
@@ -190,7 +190,7 @@ pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 
     for y in 0..input.height {
         for x in 0..input.width {
-            let px: <M as ColorMode<C>>::Pixel = input.get_pixel(x, y);
+            let px: <M as Format<C>>::Pixel = input.get_pixel(x, y);
             
             let px_luma: ColorL<C> = px.luma();
 
@@ -217,7 +217,7 @@ pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 
 // impl<M, C, S> Surface<M, C, S>
 //     where
-//         M: ColorMode<C>,
+//         M: Format<C>,
 //         C: Channel,
 //         S: Deref<Target=[C]>,
 // {
@@ -244,8 +244,8 @@ pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 //         S: Deref<Target=[C]>,
 // {
 //     pub fn extract_luma2<'a>(&'a self) -> Surface<Luma, C, Box<[C]>> {
-//         let size = <Luma as ColorMode<C>>::channel_data_size(self.width, self.height);
-//         let min = Colorspace::black();
+//         let size = <Luma as Format<C>>::channel_data_size(self.width, self.height);
+//         let min = Pixel::black();
 
 //         let mut luma = vec![min; size].into_boxed_slice();
 //         for (px, lpx) in self.storage.chunks(4).zip(luma.iter_mut()) {
@@ -268,7 +268,7 @@ impl<S> Surface<Luma, u8, S>
         assert_eq!(self.width, output.width);
         assert_eq!(self.height, output.height);
 
-        let mut data_pix: [<Luma as ColorMode<u8>>::Pixel; 9] = [Colorspace::black(); 9];
+        let mut data_pix: [<Luma as Format<u8>>::Pixel; 9] = [Pixel::black(); 9];
         let mut data: [u8; 9] = [0; 9];
         for y in 0..self.height {
             for x in 0..self.width {
@@ -283,7 +283,7 @@ impl<S> Surface<Luma, u8, S>
 // TODO: bound-check elision
 pub struct Pixels<'a, M, C, S>
     where
-        M: ColorMode<C> + 'a,
+        M: Format<C> + 'a,
         C: Channel + 'a,
         S: Deref<Target=[C]> + 'a,
 {
@@ -294,7 +294,7 @@ pub struct Pixels<'a, M, C, S>
 
 impl<'a, M, C, S> Pixels<'a, M, C, S>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]>,
 {
@@ -309,7 +309,7 @@ impl<'a, M, C, S> Pixels<'a, M, C, S>
 
 impl<'a, M, C, S> Iterator for Pixels<'a, M, C, S>
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]> + 'a,
 {
@@ -344,27 +344,27 @@ impl<'a, M, C, S> Iterator for Pixels<'a, M, C, S>
 #[inline]
 fn surf_3x3_get<M, C, S>(
     inp: &Surface<M, C, S>,
-    data: &mut [<M as ColorMode<C>>::Pixel; 9],
+    data: &mut [<M as Format<C>>::Pixel; 9],
     x_pos: u32,
     y_pos: u32,
 )
     where
-        M: ColorMode<C>,
+        M: Format<C>,
         C: Channel,
         S: Deref<Target=[C]>,
 {
     *data = [
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos - 1),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos - 1),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos - 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos - 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos - 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos - 1),
 
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos + 0),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos + 0),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos + 0),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos + 0),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos + 0),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos + 0),
 
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos + 1),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos + 1),
-        <M as ColorMode<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos + 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos - 1, y_pos + 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 0, y_pos + 1),
+        <M as Format<C>>::get_pixel(&inp.storage, inp.width, inp.height, x_pos + 1, y_pos + 1),
     ];
 }
 

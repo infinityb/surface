@@ -14,7 +14,7 @@ pub const BOX_HEIGHT_SHL: usize = 3;
 pub const BOX_HEIGHT: usize = 1 << 3;
 
 pub mod colorspace;
-pub use self::colorspace::{Channel, Colorspace};
+pub use self::colorspace::{Channel, Pixel};
 pub use self::colorspace::{
     ColorL,
     ColorLA,

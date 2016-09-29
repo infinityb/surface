@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use super::{ColorMode};
+use super::{Format};
 use super::super::Channel;
 use super::super::colorspace::ColorYUV as ColorYuv;
 
@@ -38,7 +38,7 @@ pub fn get_v_mut<C>(data: &mut [C], pixels: usize) -> &mut [C] {
     &mut data[pixels..][pixels / 4..][..pixels / 4]
 }
 
-impl<C> ColorMode<C> for Yuv420p where C: Channel {
+impl<C> Format<C> for Yuv420p where C: Channel {
     type Pixel = ColorYuv<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -48,7 +48,7 @@ impl<C> ColorMode<C> for Yuv420p where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
         let pixels = width as usize * width as usize;
 
         let luma_min = <C as Channel>::from_i32(0, 0, 2);
@@ -77,7 +77,7 @@ impl<C> ColorMode<C> for Yuv420p where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel) {
+    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel) {
         let pixels = width as usize * height as usize;
         let offset_y = x + width * y;
         let offset_c = (x / 2) + width * (y / 2);
@@ -93,7 +93,7 @@ impl<C> ColorMode<C> for Yuv420p where C: Channel {
 pub struct Yuv888;
 
 
-impl<C> ColorMode<C> for Yuv888 where C: Channel {
+impl<C> Format<C> for Yuv888 where C: Channel {
     type Pixel = ColorYuv<C>;
 
     fn channel_data_size(width: u32, height: u32) -> usize
@@ -103,7 +103,7 @@ impl<C> ColorMode<C> for Yuv888 where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
-        assert!(storage.len() == <Self as ColorMode<C>>::channel_data_size(width, height));
+        assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
         let pixels = width as usize * width as usize;
 
         let luma_min = <C as Channel>::from_i32(0, 0, 2);
@@ -138,7 +138,7 @@ impl<C> ColorMode<C> for Yuv888 where C: Channel {
     }
 
     #[inline]
-    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as ColorMode<C>>::Pixel) {
+    fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel) {
         let pixels = width as usize * height as usize;
         let offset_y = x + width * y;
         let offset_c = (x / 2) + width * (y / 2);
