@@ -149,8 +149,8 @@ impl Channel for f64 {
     fn sub(a: f64, b: f64) -> f64 { a - b }
 }
 
-pub trait Colorspace<T: Channel>: Copy + Sized {
-    // type Channel: Channel;
+pub trait Colorspace: Copy + Sized {
+    type Channel: Channel;
 
     /// Bytes per pixel
     // fn bpp() -> usize;
@@ -159,7 +159,7 @@ pub trait Colorspace<T: Channel>: Copy + Sized {
 
     fn black() -> Self;
 
-    fn luma(&self) -> ColorL<T>;
+    fn luma(&self) -> ColorL<Self::Channel>;
 }
 
 

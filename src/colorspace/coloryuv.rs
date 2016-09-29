@@ -24,8 +24,8 @@ impl<T: Channel> ColorYUV<T> {
     }
 }
 
-impl<T> Colorspace<T> for ColorYUV<T> where T: Channel+Copy {
-    // type Channel = T;
+impl<T> Colorspace for ColorYUV<T> where T: Channel+Copy {
+    type Channel = T;
     
     fn white() -> Self {
         ColorYUV::new_yuv(
@@ -41,7 +41,7 @@ impl<T> Colorspace<T> for ColorYUV<T> where T: Channel+Copy {
             Channel::min_value())
     }
 
-    fn luma(&self) -> ColorL<T> {
+    fn luma(&self) -> ColorL<Self::Channel> {
         ColorL::new_l(self.y)
     }
 }

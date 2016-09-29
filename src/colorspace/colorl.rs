@@ -17,7 +17,9 @@ impl<T: Channel> ColorL<T> {
     }
 }
 
-impl<T> Colorspace<T> for ColorL<T> where T: Channel+Copy {   
+impl<T> Colorspace for ColorL<T> where T: Channel+Copy {
+    type Channel = T;
+
     fn white() -> Self {
         ColorL { l: Channel::max_value() }
     }
@@ -26,7 +28,7 @@ impl<T> Colorspace<T> for ColorL<T> where T: Channel+Copy {
         ColorL { l: Channel::min_value() }
     }
 
-    fn luma(&self) -> ColorL<T> {
+    fn luma(&self) -> ColorL<Self::Channel> {
         ColorL::new_l(self.l)
     }
 }

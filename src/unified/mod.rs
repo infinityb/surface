@@ -13,7 +13,7 @@ mod yuv420;
 mod luma;
 mod rgba;
 
-pub use self::yuv420::{Yuv420p};
+pub use self::yuv420::{Yuv420p, Yuv888};
 pub use self::luma::{Luma};
 pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
 
@@ -21,7 +21,7 @@ pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
 pub trait Kernel3x3<C, S>
     where
         C: Channel,
-        S: Colorspace<C>,
+        S: Colorspace<Channel=C>,
 {
     fn execute(data: &[S; 9]) -> S;
 }
@@ -30,7 +30,7 @@ pub trait ColorMode<C>
     where
         C: Channel
 {
-    type Pixel: Colorspace<C>;
+    type Pixel: Colorspace<Channel=C>;
 
     // type PixelRef;
 
@@ -81,7 +81,7 @@ impl<M, C, S> Surface<M, C, S>
         self.height
     }
 
-    pub fn pixels(&self) -> Pixels<M, C, S> {
+    pub fn iter_pixels(&self) -> Pixels<M, C, S> {
         Pixels::new(self)
     }
 
@@ -169,7 +169,7 @@ impl<M, C> Surface<M, C, Box<[C]>>
 }
 
 
-fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
+pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 -> Surface<Luma, C, Box<[C]>>
     where
         M: ColorMode<C> + ::std::marker::Reflect + 'static,

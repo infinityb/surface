@@ -24,7 +24,9 @@ impl<T: Channel> ColorRGB<T> {
     }
 }
 
-impl<T> Colorspace<T> for ColorRGB<T> where T: Channel+Copy {
+impl<T> Colorspace for ColorRGB<T> where T: Channel+Copy {
+    type Channel = T;
+
     fn white() -> Self {
         ColorRGB::new_rgb(
             Channel::max_value(),
@@ -39,7 +41,7 @@ impl<T> Colorspace<T> for ColorRGB<T> where T: Channel+Copy {
             Channel::min_value())
     }
 
-    fn luma(&self) -> ColorL<T> {
+    fn luma(&self) -> ColorL<Self::Channel> {
         let (r, g, b) = (
             Channel::to_i32(&self.r, 0, 0xFF),
             Channel::to_i32(&self.g, 0, 0xFF),
