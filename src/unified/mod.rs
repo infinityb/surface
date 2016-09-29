@@ -9,11 +9,14 @@ use super::colorspace::{
 };
 use super::Channel;
 
+mod yuv444;
 mod yuv420;
 mod luma;
 mod rgba;
 
-pub use self::yuv420::{Yuv420p, Yuv888};
+pub use self::yuv420::{Yuv420p};
+pub use self::yuv444::{Yuv444};
+
 pub use self::luma::{Luma};
 pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
 

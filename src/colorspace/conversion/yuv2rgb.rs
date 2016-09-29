@@ -4,7 +4,7 @@ use std::ops::Deref;
 use ::Surface;
 use super::super::super::Channel;
 use super::super::{ColorYUV, ColorRGB, Pixel};
-use super::super::super::unified::{Yuv888, Rgb, Format};
+use super::super::super::unified::{Yuv444, Rgb, Format};
 use ::unsafe_impl::chunks3_mut;
 
 fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
@@ -12,7 +12,7 @@ fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
 }
 
 #[inline(always)]
-fn pixel_yuv888_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
+fn pixel_yuv444_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
     let (y, u, v) = (c.y as f64, c.u as f64, c.v as f64);
     let (up, vp) = (u - 128.0, v - 128.0);
 
@@ -27,7 +27,7 @@ fn pixel_yuv888_to_rgb888(c: ColorYUV<u8>) -> ColorRGB<u8> {
     }
 }
 
-pub fn yuv888_to_rgb888<S>(surf: &Surface<Yuv888, u8, S>)
+pub fn yuv444_to_rgb888<S>(surf: &Surface<Yuv444, u8, S>)
     -> Surface<Rgb, u8, Box<[u8]>>
     where
         S: Deref<Target=[u8]>,
@@ -36,7 +36,7 @@ pub fn yuv888_to_rgb888<S>(surf: &Surface<Yuv888, u8, S>)
     let mut storage: Box<[u8]> = vec![0; subpixel_count].into_boxed_slice();
 
     for (pin, (r, g, b)) in surf.iter_pixels().zip(chunks3_mut(&mut storage)) {
-        let rgb = pixel_yuv888_to_rgb888(pin);
+        let rgb = pixel_yuv444_to_rgb888(pin);
         *r = rgb.r;
         *g = rgb.g;
         *b = rgb.b;

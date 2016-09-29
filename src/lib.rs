@@ -30,7 +30,9 @@ mod unsafe_impl;
 mod unified;
 pub use self::unified::{
     Surface,
-    Yuv888,
+    Format,
+    Yuv420p,
+    Yuv444,
     Rgb,
     Rgba,
     RgbPlanar,
