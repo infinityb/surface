@@ -1,24 +1,36 @@
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
-use super::colorspace::{Pixel, ColorYUV as ColorYuv, ColorL};
+use super::colorspace::{
+    Colorspace,
+    ColorYUV as ColorYuv,
+    ColorRGBA as ColorRgba,
+    ColorL,
+};
 use super::Channel;
 
 mod yuv420;
 mod luma;
+mod rgba;
 
 pub use self::yuv420::{Yuv420p};
 pub use self::luma::{Luma};
+pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
 
-pub trait Kernel3x3<S> where P: Pixel {
-    fn execute(data: &[P; 9]) -> P;
+
+pub trait Kernel3x3<C, S>
+    where
+        C: Channel,
+        S: Colorspace<C>,
+{
+    fn execute(data: &[S; 9]) -> S;
 }
 
 pub trait ColorMode<C>
     where
         C: Channel
 {
-    type Pixel: Pixel;
+    type Pixel: Colorspace<C>;
 
     // type PixelRef;
 
@@ -32,7 +44,7 @@ pub trait ColorMode<C>
 }
 
 #[derive(Clone)]
-pub struct PlanarSurface<M, C, S>
+pub struct Surface<M, C, S>
     where
         M: ColorMode<C>,
         C: Channel,
@@ -45,14 +57,14 @@ pub struct PlanarSurface<M, C, S>
     _channel_marker: PhantomData<C>,
 }
 
-impl<M, C, S> PlanarSurface<M, C, S>
+impl<M, C, S> Surface<M, C, S>
     where
-        M: ColorMode<C, Pixel=C>,
+        M: ColorMode<C>,
         C: Channel,
         S: Deref<Target=[C]>,
 {
-    pub fn new(width: u32, height: u32, storage: S) -> PlanarSurface<M, C, S> {
-        PlanarSurface {
+    pub fn new(width: u32, height: u32, storage: S) -> Surface<M, C, S> {
+        Surface {
             width: width,
             height: height,
             storage: storage,
@@ -77,44 +89,44 @@ impl<M, C, S> PlanarSurface<M, C, S>
         <M as ColorMode<C>>::get_pixel(&self.storage, self.width, self.height, x, y)
     }
 
-    pub fn to_owned(&self) -> PlanarSurface<M, C, Box<[C]>> {
-        PlanarSurface::new(self.width, self.height, copy_to_boxed_slice(&self.storage))
+    pub fn to_owned(&self) -> Surface<M, C, Box<[C]>> {
+        Surface::new(self.width, self.height, copy_to_boxed_slice(&self.storage))
     }
 
     pub fn into_storage(self) -> S {
         self.storage
     }
 
-    pub fn run_kernel_3x3<S2, K>(&self, kernel: &K, output: &mut PlanarSurface<M, C, S2>)
+    pub fn run_kernel_3x3<S2, K>(&self, kernel: &K, output: &mut Surface<M, C, S2>)
         where
-            K: Kernel3x3<<M as ColorMode<C>>::Pixel>,
+            K: Kernel3x3<C, <M as ColorMode<C>>::Pixel>,
             S2: Deref<Target=[C]> + DerefMut,
     {
         assert_eq!(self.width, output.width);
         assert_eq!(self.height, output.height);
 
-        let mut data: [<M as ColorMode<C>>::Pixel; 9] = [Pixel::black(); 9];
+        let mut data: [<M as ColorMode<C>>::Pixel; 9] = [Colorspace::black(); 9];
         for y in 1..(self.height - 1) {
             for x in 1..(self.width - 1) {
                 surf_3x3_get(self, &mut data, x, y);
-                PlanarSurface::put_pixel(output, x, y, <K as Kernel3x3<_>>::execute(&data));
+                Surface::put_pixel(output, x, y, <K as Kernel3x3<_, _>>::execute(&data));
             }
         }
     }
 }
 
-impl<M, C, S> PlanarSurface<M, C, S>
+impl<M, C, S> Surface<M, C, S>
     where
         M: ColorMode<C>,
         C: Channel,
         S: Deref<Target=[C]> + DerefMut,
 {
     pub fn put_pixel(&mut self, x: u32, y: u32, val: M::Pixel) {
-        <M as ColorMode<_>>::put_pixel(&mut self.storage, self.width, self.height, x, y, val)
+        <M as ColorMode<C>>::put_pixel(&mut self.storage, self.width, self.height, x, y, val)
     }
 }
 
-impl<M, S> PlanarSurface<M, u8, S>
+impl<M, S> Surface<M, u8, S>
     where
         M: ColorMode<u8>,
         S: Deref<Target=[u8]>
@@ -124,7 +136,7 @@ impl<M, S> PlanarSurface<M, u8, S>
     }
 }
 
-impl<M, S> PlanarSurface<M, u8, S>
+impl<M, S> Surface<M, u8, S>
     where
         M: ColorMode<u8>,
         S: Deref<Target=[u8]> + DerefMut
@@ -134,23 +146,120 @@ impl<M, S> PlanarSurface<M, u8, S>
     }
 }
 
-impl<C, S> PlanarSurface<Yuv420p, C, S>
+impl<M, C> Surface<M, C, Box<[C]>>
     where
+        M: ColorMode<C>,
         C: Channel,
-        S: Deref<Target=[C]>,
 {
-    pub fn extract_luma<'a>(&'a self) -> PlanarSurface<Luma, C, &'a [C]> {
-        let pixels = self.width as usize * self.width as usize;
-        let luma = yuv420::get_y(&self.storage, pixels);
-        PlanarSurface::new(self.width, self.height, luma)
+    pub fn new_black(width: u32, height: u32) -> Surface<M, C, Box<[C]>> {
+        let length = <M as ColorMode<C>>::channel_data_size(width, height);
+        let min = <C as Channel>::min_value();
+
+        let mut storage = vec![min; length].into_boxed_slice();
+        <M as ColorMode<C>>::init_black(width, height, &mut storage);
+
+        Surface {
+            width: width,
+            height: height,
+            storage: storage,
+            _mode_marker: PhantomData,
+            _channel_marker: PhantomData,
+        }
     }
 }
 
-impl<S> PlanarSurface<Luma, u8, S>
+
+fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
+-> Surface<Luma, C, Box<[C]>>
+    where
+        M: ColorMode<C> + ::std::marker::Reflect + 'static,
+        C: Channel,
+        S: Deref<Target=[C]>,
+{
+    use std::any::TypeId;
+
+    let mut out: Surface<Luma, C, Box<[C]>> = Surface::new_black(input.width, input.height);
+
+    // wooo reflection -- probably optimised out entirely though?
+    if TypeId::of::<M>() == TypeId::of::<Yuv420p>() {
+        let pixels = input.width as usize * input.height as usize;
+        let luma = yuv420::get_y(&input.storage, pixels);
+
+        return Surface::new(input.width, input.height, luma).to_owned();
+    }
+
+    for y in 0..input.height {
+        for x in 0..input.width {
+            let px: <M as ColorMode<C>>::Pixel = input.get_pixel(x, y);
+            
+            let px_luma: ColorL<C> = px.luma();
+
+            out.put_pixel(x, y, px_luma);
+        }
+    }
+
+    out
+}
+
+
+// impl<C, S> Surface<Yuv420p, C, S>
+//     where
+//         C: Channel,
+//         S: Deref<Target=[C]>,
+// {
+//     // maybe stupid -- storage should be same? -- or cows
+//     pub fn extract_luma2<'a>(&'a self) -> Surface<Luma, C, &'a [C]> {
+//         let pixels = self.width as usize * self.width as usize;
+//         let luma = yuv420::get_y(&self.storage, pixels);
+//         Surface::new(self.width, self.height, luma)
+//     }
+// }
+
+// impl<M, C, S> Surface<M, C, S>
+//     where
+//         M: ColorMode<C>,
+//         C: Channel,
+//         S: Deref<Target=[C]>,
+// {
+//     pub fn extract_luma(&self) -> Surface<Luma, C, Box<[C]>> {
+//         let mut out: Surface<Luma, C, Box<[C]>> = Surface::new_black(self.width, self.height);
+
+//         for y in 0..self.height {
+//             for x in 0..self.width {
+//                 
+
+//                 let px_luma: ColorL<C> = px.luma();
+//                 out.put_pixel(x, y, px_luma);
+//             }
+//         }
+
+//         out
+//     }
+// }
+
+
+// impl<C, S> Surface<Rgba, C, S>
+//     where
+//         C: Channel,
+//         S: Deref<Target=[C]>,
+// {
+//     pub fn extract_luma2<'a>(&'a self) -> Surface<Luma, C, Box<[C]>> {
+//         let size = <Luma as ColorMode<C>>::channel_data_size(self.width, self.height);
+//         let min = Colorspace::black();
+
+//         let mut luma = vec![min; size].into_boxed_slice();
+//         for (px, lpx) in self.storage.chunks(4).zip(luma.iter_mut()) {
+//             *lpx = ColorRgba::new_rgba(px[0], px[1], px[2], px[3]).luma();
+//         }
+//         Surface::new(self.width, self.height, luma)
+//     }
+// }
+
+impl<S> Surface<Luma, u8, S>
     where
         S: Deref<Target=[u8]>,
 {
-    pub fn run_luma8_kernel_3x3<S2>(&self, kernel: fn(pixels: &[u8; 9]) -> u8, output: &mut PlanarSurface<Luma, u8, S2>)
+    pub fn run_luma8_kernel_3x3<S2>(&self, kernel: fn(pixels: &[u8; 9]) -> u8, output: &mut Surface<Luma, u8, S2>)
         where
             S2: Deref<Target=[u8]> + DerefMut
     {
@@ -159,7 +268,7 @@ impl<S> PlanarSurface<Luma, u8, S>
         assert_eq!(self.width, output.width);
         assert_eq!(self.height, output.height);
 
-        let mut data_pix: [<Luma as ColorMode<u8>>::Pixel; 9] = [Pixel::black(); 9];
+        let mut data_pix: [<Luma as ColorMode<u8>>::Pixel; 9] = [Colorspace::black(); 9];
         let mut data: [u8; 9] = [0; 9];
         for y in 0..self.height {
             for x in 0..self.width {
@@ -178,7 +287,7 @@ pub struct Pixels<'a, M, C, S>
         C: Channel + 'a,
         S: Deref<Target=[C]> + 'a,
 {
-    surface: &'a PlanarSurface<M, C, S>,
+    surface: &'a Surface<M, C, S>,
     x_pos: u32,
     y_pos: u32,
 }
@@ -189,7 +298,7 @@ impl<'a, M, C, S> Pixels<'a, M, C, S>
         C: Channel,
         S: Deref<Target=[C]>,
 {
-    fn new(surface: &PlanarSurface<M, C, S>) -> Pixels<M, C, S> {
+    fn new(surface: &Surface<M, C, S>) -> Pixels<M, C, S> {
         Pixels {
             surface: surface,
             x_pos: 0,
@@ -223,9 +332,9 @@ impl<'a, M, C, S> Iterator for Pixels<'a, M, C, S>
     }
 }
 
-// impl<C> PlanarSurface<RgbHolder<C>, Rgb, C> where C: Channel {
-//     pub fn extract_luma(&self) -> PlanarSurface<[Box<[C]>; 1], Luma, C> {
-//         PlanarSurface::new(self.width, self.height, self.planes.get_y())
+// impl<C> Surface<RgbHolder<C>, Rgb, C> where C: Channel {
+//     pub fn extract_luma(&self) -> Surface<[Box<[C]>; 1], Luma, C> {
+//         Surface::new(self.width, self.height, self.planes.get_y())
 //     }
 // }
 
@@ -234,7 +343,7 @@ impl<'a, M, C, S> Iterator for Pixels<'a, M, C, S>
 
 #[inline]
 fn surf_3x3_get<M, C, S>(
-    inp: &PlanarSurface<M, C, S>,
+    inp: &Surface<M, C, S>,
     data: &mut [<M as ColorMode<C>>::Pixel; 9],
     x_pos: u32,
     y_pos: u32,

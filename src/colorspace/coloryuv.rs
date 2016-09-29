@@ -1,4 +1,4 @@
-use super::{Channel, Colorspace};
+use super::{Channel, Colorspace, ColorL};
 
 #[derive(Debug, Copy)]
 pub struct ColorYUV<T> {
@@ -24,8 +24,8 @@ impl<T: Channel> ColorYUV<T> {
     }
 }
 
-impl<T> Colorspace for ColorYUV<T> where T: Channel+Copy {
-    type Channel = T;
+impl<T> Colorspace<T> for ColorYUV<T> where T: Channel+Copy {
+    // type Channel = T;
     
     fn white() -> Self {
         ColorYUV::new_yuv(
@@ -41,7 +41,7 @@ impl<T> Colorspace for ColorYUV<T> where T: Channel+Copy {
             Channel::min_value())
     }
 
-    fn luma(&self) -> T {
-        self.y
+    fn luma(&self) -> ColorL<T> {
+        ColorL::new_l(self.y)
     }
 }

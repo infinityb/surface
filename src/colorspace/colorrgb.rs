@@ -1,4 +1,4 @@
-use super::{Colorspace, Channel};
+use super::{Colorspace, Channel, ColorL};
 
 #[derive(Debug, Copy)]
 pub struct ColorRGB<T> {
@@ -24,9 +24,7 @@ impl<T: Channel> ColorRGB<T> {
     }
 }
 
-impl<T> Colorspace for ColorRGB<T> where T: Channel+Copy {
-    type Channel = T;
-
+impl<T> Colorspace<T> for ColorRGB<T> where T: Channel+Copy {
     fn white() -> Self {
         ColorRGB::new_rgb(
             Channel::max_value(),
@@ -41,7 +39,7 @@ impl<T> Colorspace for ColorRGB<T> where T: Channel+Copy {
             Channel::min_value())
     }
 
-    fn luma(&self) -> T {
+    fn luma(&self) -> ColorL<T> {
         let (r, g, b) = (
             Channel::to_i32(&self.r, 0, 0xFF),
             Channel::to_i32(&self.g, 0, 0xFF),
@@ -49,6 +47,6 @@ impl<T> Colorspace for ColorRGB<T> where T: Channel+Copy {
         
         let luma_val = (19595*r + 38470*g + 7471*b + 1<<15) >> 16;
 
-        Channel::from_i32(luma_val, 0, 0xFF)
+        ColorL::new_l(Channel::from_i32(luma_val, 0, 0xFF))
     }
 }

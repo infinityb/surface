@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 use num::traits::{Float, ToPrimitive};
-use super::{Channel, Colorspace, clamp};
+use super::{Channel, Colorspace, clamp, ColorL};
 
 #[derive(Debug, Copy)]
 pub struct ColorRGBA<T> {
@@ -121,9 +121,7 @@ impl<T: Float> Mul<T> for ColorRGBA<T> {
     }
 }
 
-impl<T> Colorspace for ColorRGBA<T> where T: Channel + Copy {
-    type Channel = T;
-
+impl<T> Colorspace<T> for ColorRGBA<T> where T: Channel + Copy {
     fn white() -> Self {
         ColorRGBA::new_rgb(
             Channel::max_value(),
@@ -138,7 +136,7 @@ impl<T> Colorspace for ColorRGBA<T> where T: Channel + Copy {
             Channel::min_value())
     }
 
-    fn luma(&self) -> T {
+    fn luma(&self) -> ColorL<T> {
         let (r, g, b) = (
             Channel::to_i32(&self.r, 0, 0xFF),
             Channel::to_i32(&self.g, 0, 0xFF),
@@ -146,7 +144,7 @@ impl<T> Colorspace for ColorRGBA<T> where T: Channel + Copy {
         
         let luma_val = (19595*r + 38470*g + 7471*b + 1<<15) >> 16;
 
-        Channel::from_i32(luma_val, 0, 0xFF)
+        ColorL::new_l(Channel::from_i32(luma_val, 0, 0xFF))
     }
 }
 

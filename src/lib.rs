@@ -21,16 +21,7 @@ pub use self::colorspace::{
 	ColorRGBA,
 };
 
-pub use self::surface::{
-	Surface,
-	PixelIter, PixelMutIter,
-	Tile, Tiles,
-	TileMut, TilesMut
-};
-
-mod surface;
-
 pub mod colorspace;
 // pub mod kernels;
-pub mod planar;
+pub mod unified;
 // pub mod netpbm_loader;

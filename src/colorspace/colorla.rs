@@ -1,4 +1,4 @@
-use super::{Channel, Colorspace};
+use super::{Channel, Colorspace, ColorL};
 
 #[derive(Debug, Copy)]
 pub struct ColorLA<T> {
@@ -25,9 +25,7 @@ impl<T: Channel> ColorLA<T> {
     }
 }
 
-impl<T> Colorspace for ColorLA<T> where T: Channel+Copy {
-    type Channel = T;
-
+impl<T> Colorspace<T> for ColorLA<T> where T: Channel+Copy {
     fn white() -> Self {
         ColorLA {
             l: Channel::max_value(),
@@ -42,7 +40,7 @@ impl<T> Colorspace for ColorLA<T> where T: Channel+Copy {
         }
     }
 
-    fn luma(&self) -> T {
-        self.l
+    fn luma(&self) -> ColorL<T> {
+        ColorL::new_l(self.l)
     }
 }

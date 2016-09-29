@@ -8,68 +8,6 @@ use super::super::colorspace::ColorYUV as ColorYuv;
 #[derive(Clone)]
 pub struct Yuv420p;
 
-// #[derive(Clone)]
-// pub struct Yuv420pHolder<C> where C: Channel {
-//     pixels: usize,
-//     data: Box<[C]>,
-// }
-
-// impl Contiguous for Yuv420pHolder<u8> {
-//     fn raw_bytes(&self) -> &[u8] {
-//         &self.data[..]
-//     }
-
-//     fn raw_bytes_mut(&mut self) -> &mut [u8] {
-//         &mut self.data[..]
-//     }
-// }
-
-// impl<C> PlaneHolder<C> for Yuv420pHolder<C> where C: Channel {
-//     fn new(width: u32, height: u32, data: &[C]) -> Self {
-//         let mut pixels_u = width as usize * height as usize;
-//         if data.len() != 3 * pixels_u / 2 {
-//             panic!("Invalid data size");
-//         }
-//         Yuv420pHolder {
-//             pixels: pixels_u,
-//             data: Into::<Vec<_>>::into(data).into_boxed_slice(),
-//         }
-//     }
-
-//     fn new_black(width: u32, height: u32) -> Self {
-//         let mut pixels_u = width as usize * height as usize;
-//         let mut subpixels = 3 * pixels_u / 2;
-
-//         let mut pixels = vec![Channel::min_value(); subpixels].into_boxed_slice();
-//         for px in pixels[pixels_u..].iter_mut() {
-//             *px = Channel::from_i32(1, 0, 2);
-//         }
-
-//         Yuv420pHolder {
-//             pixels: pixels_u,
-//             data: pixels,
-//         }
-//     }
-
-//     fn get(&self, idx: usize) -> &[C] {
-//         match idx {
-//             0 => self.get_y(),
-//             1 => self.get_u(),
-//             2 => self.get_v(),
-//             _ => panic!("channel out of range"),
-//         }
-//     }
-
-//     fn get_mut(&mut self, idx: usize) -> &mut [C] {
-//         match idx {
-//             0 => self.get_y_mut(),
-//             1 => self.get_u_mut(),
-//             2 => self.get_v_mut(),
-//             _ => panic!("channel out of range"),
-//         }
-//     }
-// }
-
 
 #[inline]
 pub fn get_y<C>(data: &[C], pixels: usize) -> &[C] {
