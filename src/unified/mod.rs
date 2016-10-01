@@ -9,13 +9,16 @@ use super::colorspace::{
 };
 use super::Channel;
 
-mod yuv444;
+
 mod yuv420;
+mod yuv422;
+mod yuv444;
 mod luma;
 mod rgba;
 
-pub use self::yuv420::{Yuv420p};
-pub use self::yuv444::{Yuv444};
+pub use self::yuv420::{Yuv420p}; // Yuv420
+pub use self::yuv422::{Yuv422, Yuv422p};
+pub use self::yuv444::{Yuv444}; // Yuv444p
 
 pub use self::luma::{Luma};
 pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
@@ -319,7 +322,7 @@ impl<'a, M, C, S> Iterator for Pixels<'a, M, C, S>
     type Item = M::Pixel;
 
     fn next(&mut self) -> Option<M::Pixel> {
-        if self.surface.width <= self.x_pos && self.surface.height <= self.y_pos {
+        if self.surface.height <= self.y_pos {
             return None;
         }
     

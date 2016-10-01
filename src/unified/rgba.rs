@@ -42,9 +42,11 @@ impl<C> Format<C> for Rgb where C: Channel {
     }
 
     #[inline]
-    fn get_pixel(storage: &[C], width: u32, _height: u32, x: u32, y: u32) -> Self::Pixel
+    fn get_pixel(storage: &[C], width: u32, height: u32, x: u32, y: u32) -> Self::Pixel
     {
-        let offset = 3 * get_offset_in_plane(x, y, width);
+        assert!(x < width, "x < width : {} < {}", x, width);
+        assert!(y < height, "y < height : {} < {}", y, height);
+        let offset = 3 * get_offset_in_plane(width, x, y);
         let px = &storage[offset..];
         ColorRgb::new_rgb(px[0], px[1], px[2])
     }
@@ -52,7 +54,7 @@ impl<C> Format<C> for Rgb where C: Channel {
     #[inline]
     fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {   
-        let offset = 3 * get_offset_in_plane(x, y, width);
+        let offset = 3 * get_offset_in_plane(width, x, y);
         let px = &mut storage[offset..];
         px[0] = pixel.r;
         px[1] = pixel.g;
@@ -85,7 +87,7 @@ impl<C> Format<C> for Rgba where C: Channel {
     #[inline]
     fn get_pixel(storage: &[C], width: u32, _height: u32, x: u32, y: u32) -> Self::Pixel
     {
-        let offset = 4 * get_offset_in_plane(x, y, width);
+        let offset = 4 * get_offset_in_plane(width, x, y);
         let px = &storage[offset..];
         ColorRgba::new_rgba(px[0], px[1], px[2], px[3])
     }
@@ -93,7 +95,7 @@ impl<C> Format<C> for Rgba where C: Channel {
     #[inline]
     fn put_pixel(storage: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel)
     {   
-        let offset = 4 * get_offset_in_plane(x, y, width);
+        let offset = 4 * get_offset_in_plane(width, x, y);
         let px = &mut storage[offset..];
         px[0] = pixel.r;
         px[1] = pixel.g;

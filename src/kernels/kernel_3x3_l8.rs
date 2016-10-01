@@ -36,3 +36,9 @@ pub fn l8_average_3x3(pixels: &[u8; 9]) -> u8 {
 
     (acc / 9) as u8
 }
+
+fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
+    use std::cmp::{min, max};
+    
+    max(min(value, max_value), min_value)
+}

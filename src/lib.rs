@@ -26,17 +26,21 @@ pub use self::colorspace::{
 
 // pub mod netpbm_loader;
 
+pub mod kernels;
 mod unsafe_impl;
 mod unified;
 pub use self::unified::{
     Surface,
     Format,
     Yuv420p,
+    Yuv422,
+    Yuv422p,
     Yuv444,
     Rgb,
     Rgba,
     RgbPlanar,
     RgbaPlanar,
+    Luma,
 };
 
 mod experimental {
