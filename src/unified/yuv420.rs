@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use super::{Format};
+use super::{Format, PlanarFormat};
 use super::super::Channel;
 use super::super::colorspace::ColorYUV as ColorYuv;
 
@@ -84,5 +84,27 @@ impl<C> Format<C> for Yuv420p where C: Channel {
         get_y_mut(holder, pixels)[offset_y as usize] = pixel.y;
         get_u_mut(holder, pixels)[offset_c as usize] = pixel.u;
         get_v_mut(holder, pixels)[offset_c as usize] = pixel.v;
+    }
+}
+
+impl<'a, C> PlanarFormat<'a, C> for Yuv420p
+    where
+        C: Channel + 'a
+{
+    type Planes = (&'a [C], &'a [C], &'a [C]);
+    type PlanesMut = (&'a mut [C], &'a mut [C], &'a mut [C]);
+
+    fn get_planes(data: &'a [C], (w, h): (u32, u32)) -> Self::Planes {
+        let (w, h) = (w as usize, h as usize);
+        let (y_plane, rest) = data.split_at(w * h);
+        let (u_plane, v_plane) = rest.split_at(w * h / 4);
+        (y_plane, u_plane, v_plane)
+    }
+
+    fn get_planes_mut(data: &'a mut [C], (w, h): (u32, u32)) -> Self::PlanesMut {
+        let (w, h) = (w as usize, h as usize);
+        let (y_plane, rest) = data.split_at_mut(w * h);
+        let (u_plane, v_plane) = rest.split_at_mut(w * h / 4);
+        (y_plane, u_plane, v_plane)
     }
 }

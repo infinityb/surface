@@ -32,6 +32,7 @@ mod unified;
 pub use self::unified::{
     Surface,
     Format,
+    PlanarFormat,
     Yuv420p,
     Yuv422,
     Yuv422p,

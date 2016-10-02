@@ -49,6 +49,18 @@ pub trait Format<C>
     fn put_pixel(holder: &mut [C], width: u32, height: u32, x: u32, y: u32, pixel: <Self as Format<C>>::Pixel);
 }
 
+pub trait PlanarFormat<'a, C>: Format<C>
+    where
+        C: Channel + 'a
+{
+    type Planes: 'a;
+    type PlanesMut: 'a;
+
+    fn get_planes(data: &'a [C], wh: (u32, u32)) -> Self::Planes;
+
+    fn get_planes_mut(data: &'a mut [C], wh: (u32, u32)) -> Self::PlanesMut;
+}
+
 #[derive(Clone)]
 pub struct Surface<M, C, S>
     where
@@ -149,6 +161,31 @@ impl<M, S> Surface<M, u8, S>
 {
     pub fn raw_bytes_mut(&mut self) -> &mut [u8] {
         &mut self.storage[..]
+    }
+}
+
+impl<'a, M, C, S> Surface<M, C, S>
+    where
+        M: Format<C> + PlanarFormat<'a, C>,
+        C: Channel + 'a,
+        S: Deref<Target=[C]>
+{
+    pub fn get_planes(&'a self) -> <M as PlanarFormat<C>>::Planes {
+        let size = (self.width, self.height);
+        <M as PlanarFormat<C>>::get_planes(&self.storage, size)
+    }
+
+}
+
+impl<'a, M, C, S> Surface<M, C, S>
+    where
+        M: Format<C> + PlanarFormat<'a, C>,
+        C: Channel + 'a,
+        S: Deref<Target=[C]> + DerefMut
+{
+    pub fn get_planes_mut(&'a mut self) -> <M as PlanarFormat<C>>::PlanesMut {
+        let size = (self.width, self.height);
+        <M as PlanarFormat<C>>::get_planes_mut(&mut self.storage, size)
     }
 }
 

@@ -1,3 +1,26 @@
+use super::super::unified::Kernel3x3;
+use ::{ColorL, Luma};
+
+pub struct Luma8Sobel3x3;
+
+impl Kernel3x3<u8, ColorL<u8>> for Luma8Sobel3x3
+{
+    fn execute(pixels: &[ColorL<u8>; 9]) -> ColorL<u8> {
+        ColorL {
+            l: l8_sobel_3x3(&[
+                pixels[0].l,
+                pixels[1].l,
+                pixels[2].l,
+                pixels[3].l,
+                pixels[4].l,
+                pixels[5].l,
+                pixels[6].l,
+                pixels[7].l,
+                pixels[8].l,
+            ])
+        }
+    }
+}
 
 pub fn l8_sobel_3x3(pixels: &[u8; 9]) -> u8 {
     let mut acc_x = 0;
@@ -27,14 +50,19 @@ pub fn l8_sobel_3x3(pixels: &[u8; 9]) -> u8 {
     clamp(acc_s.sqrt().round() as i32, 0x00, 0xFF) as u8
 }
 
-pub fn l8_average_3x3(pixels: &[u8; 9]) -> u8 {
-    let mut acc = 0;
+pub struct Luma8Average3x3;
 
-    for px in pixels.iter() {
-        acc += *px as i16;
+impl Kernel3x3<u8, ColorL<u8>> for Luma8Average3x3
+{
+    fn execute(pixels: &[ColorL<u8>; 9]) -> ColorL<u8> {
+        let mut acc = 0;
+
+        for px in pixels.iter() {
+            acc += px.l as i16;
+        }
+
+        ColorL { l: (acc / 9) as u8 }
     }
-
-    (acc / 9) as u8
 }
 
 fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
@@ -42,3 +70,4 @@ fn clamp<T: Ord>(value: T, min_value: T, max_value: T) -> T {
     
     max(min(value, max_value), min_value)
 }
+
