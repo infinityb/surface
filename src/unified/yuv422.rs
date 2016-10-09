@@ -63,10 +63,10 @@ impl<C> Format<C> for Yuv422 where C: Channel {
                 *y = luma_min;
             }
             if let Some(u) = iter.next() {
-                *u = luma_min;
+                *u = chroma_neutral;
             }
             if let Some(v) = iter.next() {
-                *v = luma_min;
+                *v = chroma_neutral;
             } else {
                 panic!("invalid storage");
             }

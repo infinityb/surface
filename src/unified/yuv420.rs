@@ -48,20 +48,23 @@ impl<C> Format<C> for Yuv420p where C: Channel {
 
     fn init_black(width: u32, height: u32, storage: &mut [C])
     {
+        assert_eq!(width % 2, 0);
+        assert_eq!(height % 2, 0);
+        
         assert!(storage.len() == <Self as Format<C>>::channel_data_size(width, height));
         let pixels = width as usize * width as usize;
 
         let luma_min = <C as Channel>::from_i32(0, 0, 2);
         let chroma_neutral = <C as Channel>::from_i32(1, 0, 2);
 
-        for ch in get_y_mut(storage, pixels).iter_mut() {
-            *ch = luma_min;
+        let mut pxiter = storage.iter_mut();
+        for _ in 0..pixels {
+            if let Some(px) = pxiter.next() {
+                *px = luma_min;
+            }
         }
-        for ch in get_u_mut(storage, pixels).iter_mut() {
-            *ch = chroma_neutral;
-        }
-        for ch in get_v_mut(storage, pixels).iter_mut() {
-            *ch = chroma_neutral;
+        while let Some(px) = pxiter.next() {
+            *px = chroma_neutral;
         }
     }
 
