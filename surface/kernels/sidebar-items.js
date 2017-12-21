@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Average3x3",""],["Sobel3x3",""]],"trait":[["Kernel3x3",""]]});

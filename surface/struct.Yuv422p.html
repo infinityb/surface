@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Yuv422p` struct in crate `surface`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Yuv422p">
+
+    <title>surface::Yuv422p - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc struct">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Struct Yuv422p</p><div class="block items"><ul><li><a href="#implementations">Trait Implementations</a></li></ul></div><p class='location'><a href='index.html'>surface</a></p><script>window.sidebarCurrent = {name: 'Yuv422p', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>surface</a>::<wbr><a class="struct" href=''>Yuv422p</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/surface/unified/yuv422.rs.html#95' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Yuv422p;</pre><div class='docblock'><p>Planar YUV 4:2:2</p>
+</div>
+            <h2 id='implementations' class='small-section-header'>
+              Trait Implementations<a href='#implementations' class='anchor'></a>
+            </h2>
+        <h3 id='impl-Clone' class='impl'><span class='in-band'><code>impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> for <a class="struct" href="../surface/struct.Yuv422p.html" title="struct surface::Yuv422p">Yuv422p</a></code><a href='#impl-Clone' class='anchor'></a></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#94' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class="method"><span id='clone.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class="struct" href="../surface/struct.Yuv422p.html" title="struct surface::Yuv422p">Yuv422p</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#94' title='goto source code'>[src]</a></span></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class="method"><span id='clone_from.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;</a>Self)</code></span><span class='out-of-band'><div class='ghost'></div><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div><a class='srclink' href='https://doc.rust-lang.org/nightly/src/core/clone.rs.html#112-114' title='goto source code'>[src]</a></span></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 id='impl-Format&lt;C&gt;' class='impl'><span class='in-band'><code>impl&lt;C&gt; <a class="trait" href="../surface/trait.Format.html" title="trait surface::Format">Format</a>&lt;C&gt; for <a class="struct" href="../surface/struct.Yuv422p.html" title="struct surface::Yuv422p">Yuv422p</a> <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;C: <a class="trait" href="../surface/colorspace/trait.Channel.html" title="trait surface::colorspace::Channel">Channel</a>,&nbsp;</span></code><a href='#impl-Format&lt;C&gt;' class='anchor'></a></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#134-173' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Pixel' class="type"><span id='Pixel.t' class='invisible'><code>type <a href='../surface/trait.Format.html#associatedtype.Pixel' class="type">Pixel</a> = <a class="struct" href="../surface/struct.ColorYUV.html" title="struct surface::ColorYUV">ColorYuv</a>&lt;C&gt;</code></span></h4>
+<h4 id='method.channel_data_size' class="method"><span id='channel_data_size.v' class='invisible'><code>fn <a href='../surface/trait.Format.html#tymethod.channel_data_size' class='fnname'>channel_data_size</a>(width: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, height: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#137-140' title='goto source code'>[src]</a></span></h4>
+<h4 id='method.init_black' class="method"><span id='init_black.v' class='invisible'><code>fn <a href='../surface/trait.Format.html#tymethod.init_black' class='fnname'>init_black</a>(width: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, height: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, storage: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;mut [C]</a>)</code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#142-157' title='goto source code'>[src]</a></span></h4>
+<h4 id='method.get_pixel' class="method"><span id='get_pixel.v' class='invisible'><code>fn <a href='../surface/trait.Format.html#tymethod.get_pixel' class='fnname'>get_pixel</a>(<br>&nbsp;&nbsp;&nbsp;&nbsp;holder: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;[C]</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;width: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;height: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;x: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;y: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a><br>) -&gt; Self::<a class="type" href="../surface/trait.Format.html#associatedtype.Pixel" title="type surface::Format::Pixel">Pixel</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#160-163' title='goto source code'>[src]</a></span></h4>
+<h4 id='method.put_pixel' class="method"><span id='put_pixel.v' class='invisible'><code>fn <a href='../surface/trait.Format.html#tymethod.put_pixel' class='fnname'>put_pixel</a>(<br>&nbsp;&nbsp;&nbsp;&nbsp;holder: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;mut [C]</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;width: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;height: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;x: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;y: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <br>&nbsp;&nbsp;&nbsp;&nbsp;pixel: Self::<a class="type" href="../surface/trait.Format.html#associatedtype.Pixel" title="type surface::Format::Pixel">Pixel</a><br>)</code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#166-172' title='goto source code'>[src]</a></span></h4>
+</div><h3 id='impl-PlanarFormat&lt;&#39;a, C&gt;' class='impl'><span class='in-band'><code>impl&lt;'a, C&gt; <a class="trait" href="../surface/trait.PlanarFormat.html" title="trait surface::PlanarFormat">PlanarFormat</a>&lt;'a, C&gt; for <a class="struct" href="../surface/struct.Yuv422p.html" title="struct surface::Yuv422p">Yuv422p</a> <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;C: <a class="trait" href="../surface/colorspace/trait.Channel.html" title="trait surface::colorspace::Channel">Channel</a> + 'a,&nbsp;</span></code><a href='#impl-PlanarFormat&lt;&#39;a, C&gt;' class='anchor'></a></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#175-195' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Planes' class="type"><span id='Planes.t' class='invisible'><code>type <a href='../surface/trait.PlanarFormat.html#associatedtype.Planes' class="type">Planes</a> = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">(</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a [C]</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a [C]</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a [C]</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">)</a></code></span></h4>
+<h4 id='associatedtype.PlanesMut' class="type"><span id='PlanesMut.t' class='invisible'><code>type <a href='../surface/trait.PlanarFormat.html#associatedtype.PlanesMut' class="type">PlanesMut</a> = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">(</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a mut [C]</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a mut [C]</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a mut [C]</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">)</a></code></span></h4>
+<h4 id='method.get_planes' class="method"><span id='get_planes.v' class='invisible'><code>fn <a href='../surface/trait.PlanarFormat.html#tymethod.get_planes' class='fnname'>get_planes</a>(data: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a [C]</a>, (w, h): <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">(</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">)</a>) -&gt; Self::<a class="type" href="../surface/trait.PlanarFormat.html#associatedtype.Planes" title="type surface::PlanarFormat::Planes">Planes</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#182-187' title='goto source code'>[src]</a></span></h4>
+<h4 id='method.get_planes_mut' class="method"><span id='get_planes_mut.v' class='invisible'><code>fn <a href='../surface/trait.PlanarFormat.html#tymethod.get_planes_mut' class='fnname'>get_planes_mut</a>(data: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;'a mut [C]</a>, (w, h): <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">(</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>, <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html">)</a>) -&gt; Self::<a class="type" href="../surface/trait.PlanarFormat.html#associatedtype.PlanesMut" title="type surface::PlanarFormat::PlanesMut">PlanesMut</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/surface/unified/yuv422.rs.html#189-194' title='goto source code'>[src]</a></span></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "surface";
+    </script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>
