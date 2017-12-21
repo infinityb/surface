@@ -20,6 +20,7 @@ pub use self::colorspace::{
     ColorLA,
     ColorRGB,
     ColorRGBA,
+    ColorYUV, 
 };
 
 // pub mod kernels;
@@ -29,6 +30,8 @@ pub use self::colorspace::{
 pub mod kernels;
 mod unsafe_impl;
 mod unified;
+mod resize;
+
 pub use self::unified::{
     Surface,
     Format,
@@ -44,6 +47,10 @@ pub use self::unified::{
     Luma,
 };
 
-mod experimental {
-    use super::unified::extract_luma;
+pub mod experimental {
+    pub use super::unified::extract_luma;
+
+    pub mod resize {
+        pub use super::super::resize::resize_nearest;
+    }
 }

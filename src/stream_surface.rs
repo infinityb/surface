@@ -8,8 +8,7 @@ struct SurfaceRing {
 
 impl SurfaceRing {
     pub fn new(width: u32, height: u32) -> SurfaceRing {
-        let (width_u, height_u) = (width as usize, height as usize);
-        vec![0; width_u * height_u * Cs::??]
+        //
     }
 }
 

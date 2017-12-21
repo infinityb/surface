@@ -1,4 +1,3 @@
-use std::marker::Reflect;
 use num::traits::{Float, ToPrimitive};
 use std::cmp::{min, max, Ord};
 use std::ops::{Add, Sub, Mul, Div};
@@ -16,7 +15,7 @@ pub use self::colorrgb::ColorRGB;
 pub use self::colorrgba::ColorRGBA;
 pub use self::coloryuv::ColorYUV;
 
-pub trait Channel: ToPrimitive + Reflect + Clone + Copy +
+pub trait Channel: ToPrimitive + Clone + Copy +
         Add<Output=Self> + Sub<Output=Self> +
         Mul<Output=Self> + Div<Output=Self>
 {

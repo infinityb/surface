@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
+use super::kernels::{Kernel3x3};
 use super::colorspace::{
     Pixel,
     ColorYUV as ColorYuv,
@@ -8,7 +9,6 @@ use super::colorspace::{
     ColorL,
 };
 use super::Channel;
-
 
 mod yuv420;
 mod yuv422;
@@ -22,15 +22,6 @@ pub use self::yuv444::{Yuv444}; // Yuv444p
 
 pub use self::luma::{Luma};
 pub use self::rgba::{Rgb, RgbPlanar, Rgba, RgbaPlanar};
-
-
-pub trait Kernel3x3<C, S>
-    where
-        C: Channel,
-        S: Pixel<Channel=C>,
-{
-    fn execute(data: &[S; 9]) -> S;
-}
 
 pub trait Format<C>
     where
@@ -115,22 +106,22 @@ impl<M, C, S> Surface<M, C, S>
         self.storage
     }
 
-    pub fn run_kernel_3x3<S2, K>(&self, kernel: &K, output: &mut Surface<M, C, S2>)
-        where
-            K: Kernel3x3<C, <M as Format<C>>::Pixel>,
-            S2: Deref<Target=[C]> + DerefMut,
-    {
-        assert_eq!(self.width, output.width);
-        assert_eq!(self.height, output.height);
+    // pub fn run_kernel<S2, K>(&self, kernel: &K, output: &mut Surface<M, C, S2>)
+    //     where
+    //         K: Kernel3x3<C>,
+    //         S2: Deref<Target=[C]> + DerefMut,
+    // {
+    //     assert_eq!(self.width, output.width);
+    //     assert_eq!(self.height, output.height);
 
-        let mut data: [<M as Format<C>>::Pixel; 9] = [Pixel::black(); 9];
-        for y in 1..(self.height - 1) {
-            for x in 1..(self.width - 1) {
-                surf_3x3_get(self, &mut data, x, y);
-                Surface::put_pixel(output, x, y, <K as Kernel3x3<_, _>>::execute(&data));
-            }
-        }
-    }
+    //     let mut data: [<M as Format<C>>::Pixel; 9] = [Pixel::black(); 9];
+    //     for y in 1..(self.height - 1) {
+    //         for x in 1..(self.width - 1) {
+    //             surf_3x3_get(self, &mut data, x, y);
+    //             Surface::put_pixel(output, x, y, <K as Kernel3x3<_>>::execute(&data), );
+    //         }
+    //     }
+    // }
 }
 
 impl<M, C, S> Surface<M, C, S>
@@ -215,7 +206,7 @@ impl<M, C> Surface<M, C, Box<[C]>>
 pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 -> Surface<Luma, C, Box<[C]>>
     where
-        M: Format<C> + ::std::marker::Reflect + 'static,
+        M: Format<C> + 'static,
         C: Channel,
         S: Deref<Target=[C]>,
 {
@@ -313,8 +304,8 @@ impl<S> Surface<Luma, u8, S>
 
         let mut data_pix: [<Luma as Format<u8>>::Pixel; 9] = [Pixel::black(); 9];
         let mut data: [u8; 9] = [0; 9];
-        for y in 0..self.height {
-            for x in 0..self.width {
+        for y in 1..(self.height - 1) {
+            for x in 1..(self.width - 1) {
                 surf_3x3_get(self, &mut data_pix, x, y);
                 data = unsafe { transmute_copy(&data_pix) };
                 output.put_pixel(x, y, ColorL::new_l(kernel(&data)));
