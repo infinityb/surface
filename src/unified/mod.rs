@@ -1,3 +1,4 @@
+use std::mem;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
@@ -66,6 +67,15 @@ pub struct Surface<M, C, S>
     _channel_marker: PhantomData<C>,
 }
 
+pub fn surface_byte_size<M, C>(width: u32, height: u32) -> usize
+where
+    M: Format<C>,
+    C: Channel,
+{
+    let length = <M as Format<C>>::channel_data_size(width, height);
+    mem::size_of::<C>() * length
+}
+
 impl<M, C, S> Surface<M, C, S>
     where
         M: Format<C>,
@@ -104,6 +114,10 @@ impl<M, C, S> Surface<M, C, S>
 
     pub fn into_storage(self) -> S {
         self.storage
+    }
+
+    pub fn as_storage(&self) -> &S {
+        &self.storage
     }
 
     // pub fn run_kernel<S2, K>(&self, kernel: &K, output: &mut Surface<M, C, S2>)

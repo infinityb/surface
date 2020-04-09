@@ -29,6 +29,7 @@ mod unified;
 mod resize;
 
 pub use self::unified::{
+    surface_byte_size,
     Surface,
     Format,
     PlanarFormat,
