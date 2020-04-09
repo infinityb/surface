@@ -1,6 +1,7 @@
 use std::mem;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use super::kernels::{Kernel3x3};
 use super::colorspace::{
@@ -138,6 +139,73 @@ impl<M, C, S> Surface<M, C, S>
     // }
 }
 
+pub trait StorageAlloc {
+    fn alloc(length: usize) -> Self;
+}
+
+
+impl<C> StorageAlloc for Arc<[C]> where C: Channel {
+    fn alloc(length: usize) -> Self {
+        let v: Box<[C]> = StorageAlloc::alloc(length);
+        v.into()
+    }
+}
+
+impl<C> StorageAlloc for Box<[C]> where C: Channel {
+    fn alloc(length: usize) -> Self {
+        let v: Vec<C> = StorageAlloc::alloc(length);
+        v.into_boxed_slice()
+    }
+}
+
+impl<C> StorageAlloc for Vec<C> where C: Channel {
+    fn alloc(length: usize) -> Self {
+        let min = <C as Channel>::min_value();
+        vec![min; length]
+    }
+}
+
+impl<C, SI, SO> From<Surface<Yuv422, C, SI>> for Surface<Yuv422p, C, SO>
+where
+    C: Channel,
+    SI: Deref<Target=[C]>,
+    SO: Deref<Target=[C]> + DerefMut + StorageAlloc
+{
+    fn from(s: Surface<Yuv422, C, SI>) -> Surface<Yuv422p, C, SO> {
+        let mut into = Surface::new_black(s.width(), s.height());
+        let mut src = s.as_storage().iter();
+
+        let (yp, up, vp): (&mut [C], &mut [C], &mut [C]) = into.get_planes_mut();
+        let mut yp_iter = yp.iter_mut();
+        let mut up_iter = up.iter_mut();
+        let mut vp_iter = vp.iter_mut();
+
+        let mut subpixel_ctr = 0;
+        loop {
+            if let (Some(ys), Some(yd)) = (src.next(), yp_iter.next()) {
+                *yd = *ys;
+                subpixel_ctr += 1;
+            }
+            if let (Some(us), Some(ud)) = (src.next(), up_iter.next()) {
+                *ud = *us;
+                subpixel_ctr += 1;
+            }
+            if let (Some(ys), Some(yd)) = (src.next(), yp_iter.next()) {
+                *yd = *ys;
+                subpixel_ctr += 1;
+            }
+            if let (Some(vs), Some(vd)) = (src.next(), vp_iter.next()) {
+                *vd = *vs;
+                subpixel_ctr += 1;
+            } else {
+                break;
+            }
+        }
+
+        into
+    }
+}
+
 impl<M, C, S> Surface<M, C, S>
     where
         M: Format<C>,
@@ -194,16 +262,15 @@ impl<'a, M, C, S> Surface<M, C, S>
     }
 }
 
-impl<M, C> Surface<M, C, Box<[C]>>
+impl<M, C, S> Surface<M, C, S>
     where
         M: Format<C>,
         C: Channel,
+        S: Deref<Target=[C]> + DerefMut + StorageAlloc
 {
-    pub fn new_black(width: u32, height: u32) -> Surface<M, C, Box<[C]>> {
+    pub fn new_black(width: u32, height: u32) -> Surface<M, C, S> {
         let length = <M as Format<C>>::channel_data_size(width, height);
-        let min = <C as Channel>::min_value();
-
-        let mut storage = vec![min; length].into_boxed_slice();
+        let mut storage = <S as StorageAlloc>::alloc(length);
         <M as Format<C>>::init_black(width, height, &mut storage);
 
         Surface {
@@ -228,7 +295,6 @@ pub fn extract_luma<M, C, S>(input: &Surface<M, C, S>)
 
     let mut out: Surface<Luma, C, Box<[C]>> = Surface::new_black(input.width, input.height);
 
-    // wooo reflection -- probably optimised out entirely though?
     if TypeId::of::<M>() == TypeId::of::<Yuv420p>() {
         let pixels = input.width as usize * input.height as usize;
         let luma = yuv420::get_y(&input.storage, pixels);
