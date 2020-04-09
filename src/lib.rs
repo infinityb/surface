@@ -1,5 +1,3 @@
-#![feature(reflect_marker)]
-
 extern crate num;
 
 //extern crate netpbm;
@@ -24,8 +22,6 @@ pub use self::colorspace::{
 };
 
 // pub mod kernels;
-
-// pub mod netpbm_loader;
 
 pub mod kernels;
 mod unsafe_impl;
